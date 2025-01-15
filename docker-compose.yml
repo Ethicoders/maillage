@@ -1,0 +1,38 @@
+services:
+  db:
+    image: postgres:16-alpine
+    restart: always
+    environment:
+      POSTGRES_USERNAME: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: test
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    ports:
+      - "127.0.0.1:5432:5432"
+
+  backend:
+    build: backend/.
+    # command: ./gleam run -- --A
+    command: /bin/sh
+    tty: true
+    environment:
+      DATABASE_URL: postgres://gleam:password@db:5432/gleam_db
+    depends_on:
+      - db
+    volumes:
+      - ./backend:/app
+    ports:
+      - "8000:8000"
+
+  frontend:
+    build: frontend/.
+    command: /bin/sh
+    tty: true
+    volumes:
+      - ./frontend:/app
+    ports:
+      - "8080:8080"
+
+volumes:
+  db-data:
