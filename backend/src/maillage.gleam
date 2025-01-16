@@ -1,17 +1,21 @@
-import gleam/javascript/promise.{type Promise}
-import gleam/option
 import gleam/http
 import gleam/int
+import gleam/javascript/promise.{type Promise}
+import gleam/option
 import glen.{type Request, type Response}
 import glen/status
 import glen/ws
 import repeatedly
 
+@external(javascript, "./graphql.js", "serve")
+pub fn serve() -> a
+
 pub fn main() {
-  glen.serve(8000, handle_req)
+  serve()
+  // glen.serve(8000, handle_req)
 }
 
-fn handle_req(req: Request) -> Promise(Response) {
+pub fn handle_req(req: Request) -> Promise(Response) {
   // Log all requests and responses
   use <- glen.log(req)
   // Handle potential crashes gracefully
@@ -21,46 +25,17 @@ fn handle_req(req: Request) -> Promise(Response) {
 
   case glen.path_segments(req) {
     [] -> index_page(req)
-    ["greet"] -> greet_page(req)
     ["counter"] -> counter_websocket(req)
     _ -> not_found(req)
   }
 }
 
+// Load index.html compiled from the frontend app
 pub fn index_page(req: Request) -> Promise(Response) {
   use <- glen.require_method(req, http.Get)
 
-  "<h1>This my webpage!</h1>
-  <p>Isn't it great?</p>
-  <p>This is my friend Lucy: <img src='/static/lucy.svg' width='20' /></p>
-  <form action='/greet' method='post'>
-    <input type='text' name='name' placeholder='What is your name?' required />
-    <input type='submit' />
-  </form>
-  <h2>Websockets</h2>
-  <p>Test the example websocket by running this in the JavaScript console:</p>
-  <pre>const socket = new WebSocket('ws://' + location.host + '/counter');
-socket.onmessage = ({ data }) => { console.log(data) };</pre>
-  <ul>
-    <li>Start the counter: <code>socket.send('start');</code></li>
-    <li>Stop the counter: <code>socket.send('stop');</code></li>
-    <li>Close the connection: <code>socket.close();</code></li>
-  </ul>"
+  "Let's load the frontend here!"
   |> glen.html(status.ok)
-  |> promise.resolve
-}
-
-pub fn greet_page(req: Request) -> Promise(Response) {
-  use <- glen.require_method(req, http.Post)
-  use formdata <- glen.require_form(req)
-
-  case formdata.values {
-    [#("name", name)] ->
-      { "<p>Lucy says: Hiya " <> glen.escape_html(name) <> "!</p>" }
-      |> glen.html(status.ok)
-
-    _ -> glen.response(status.bad_request)
-  }
   |> promise.resolve
 }
 
