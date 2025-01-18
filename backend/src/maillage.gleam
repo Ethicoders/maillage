@@ -1,3 +1,4 @@
+import gleam/dict.{type Dict}
 import gleam/http
 import gleam/int
 import gleam/javascript/promise.{type Promise}
@@ -8,11 +9,15 @@ import glen/ws
 import repeatedly
 
 @external(javascript, "./graphql.js", "serve")
-pub fn serve() -> a
+pub fn serve(resolvers: Dict(String, fn() -> String)) -> a
+
+fn hello() -> String {
+  "Hello, World!!!"
+}
 
 pub fn main() {
-  serve()
-  // glen.serve(8000, handle_req)
+  let query_resolvers = dict.new() |> dict.insert("hello", hello)
+  serve(query_resolvers)
 }
 
 pub fn handle_req(req: Request) -> Promise(Response) {
