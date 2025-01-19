@@ -17,6 +17,7 @@ services:
     command: /bin/sh
     tty: true
     environment:
+      NODE_ENV: development
       DATABASE_URL: postgres://gleam:password@db:5432/gleam_db
     depends_on:
       - db
@@ -29,6 +30,8 @@ services:
     build: frontend/.
     command: /bin/sh
     tty: true
+    environment:
+      NODE_ENV: development
     volumes:
       - ./frontend:/app
     ports:
