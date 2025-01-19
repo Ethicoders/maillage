@@ -34,9 +34,21 @@ export const getHandler = (queryResolvers) => {
     })(request);
 };
 
-export const serve = (queryResolvers) => {
-  console.log("serve");
+const isDev = () => Deno.env.get("NODE_ENV") === "development";
 
+const applyCORSHeaders = (headers) => {
+  const corsHeaders = {
+    "Access-Control-Allow-Origin": isDev() ? "*" : "TBD",
+    "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+    "Access-Control-Allow-Credentials": true,
+    "Access-Control-Allow-Headers": "Content-Type, Authorization",
+  };
+  for (let i in corsHeaders) {
+    headers.set(i, corsHeaders[i]);
+  }
+};
+
+export const serve = (queryResolvers) => {
   const handler = getHandler(queryResolvers);
 
   Deno.serve(
@@ -45,13 +57,32 @@ export const serve = (queryResolvers) => {
     },
     async (request) => {
       const { pathname } = new URL(request.url);
+      const clone = request.clone();
+
+      try {
+        const body = await clone.json();
+
+        if (isDev() && body.operationName !== "IntrospectionQuery") {
+          console.log("Incoming request", request, body.operationName);
+        }
+      } catch (error) {}
+
+      // request.bodyUsed = false;
       if (pathname === "/graphql") {
-        return handler(request);
+        // Preflight case
+        if (request.method === "OPTIONS") {
+          const response = new Response(null);
+          applyCORSHeaders(response.headers);
+          
+          return response;
+        }
+        const response = await handler(request);
+        applyCORSHeaders(response.headers);
+        return response;
       } else {
         const req = glen.convert_request(request);
         const response = await app.handle_req(req);
         const res = glen.convert_response(response);
-
         return res;
       }
     }
