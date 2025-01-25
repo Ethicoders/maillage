@@ -27,7 +27,8 @@ gleam_stdlib = ">= 0.34.0 and < 2.0.0"
 gleam_http = ">= 0.5.0 and < 4.0.0"
 repeatedly = ">= 0.1.0 and < 3.0.0"
 gleam_javascript = ">= 0.13.0 and < 1.0.0"
-radiate = ">= 0.4.0 and < 1.0.0"
+birl = ">= 1.8.0 and < 2.0.0"
+gleam_regexp = ">= 1.0.0 and < 2.0.0"
+gleeunit = ">= 1.2.0 and < 2.0.0"
 
 [dev-dependencies]
-gleeunit = ">= 1.0.0 and < 2.0.0"

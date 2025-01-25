@@ -3,13 +3,30 @@ services:
     image: postgres:16-alpine
     restart: always
     environment:
-      POSTGRES_USERNAME: postgres
-      POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: test
+      POSTGRES_USERNAME: gleam
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: gleam_db
     volumes:
       - db-data:/var/lib/postgresql/data
     ports:
-      - "127.0.0.1:5432:5432"
+      - "5432:5432"
+    networks:
+      - postgres
+
+  pgadmin:
+    image: dpage/pgadmin4
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_DEFAULT_EMAIL:-pgadmin4@pgadmin.org}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD:-admin}
+      PGADMIN_CONFIG_SERVER_MODE: 'False'
+    volumes:
+       - pgadmin:/var/lib/pgadmin
+
+    ports:
+      - "${PGADMIN_PORT:-5050}:80"
+    networks:
+      - postgres
+    restart: unless-stopped
 
   backend:
     build: backend/.
@@ -18,11 +35,13 @@ services:
     tty: true
     environment:
       NODE_ENV: development
-      DATABASE_URL: postgres://gleam:password@db:5432/gleam_db
+      DATABASE_URL: postgres://gleam:password@db:5432/gleam_db?sslmode=disable
     depends_on:
       - db
     volumes:
       - ./backend:/app
+    networks:
+      - postgres
     ports:
       - "8000:8000"
 
@@ -37,5 +56,10 @@ services:
     ports:
       - "8080:8080"
 
+networks:
+  postgres:
+    driver: bridge
+
 volumes:
   db-data:
+  pgadmin:

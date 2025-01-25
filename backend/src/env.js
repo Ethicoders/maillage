@@ -1,0 +1,1 @@
+export const getEnv = (key) => Deno.env.get(key);

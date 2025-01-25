@@ -3,12 +3,8 @@ import { makeExecutableSchema } from "https://deno.land/x/graphql_tools@0.0.2/mo
 import { gql } from "https://deno.land/x/graphql_tag@0.0.1/mod.ts";
 import * as glen from "../glen/glen.mjs";
 import * as app from "./maillage.mjs";
-
-const typeDefs = gql`
-  type Query {
-    hello: String
-  }
-`;
+import { GraphQLScalarType } from "https://deno.land/x/graphql_deno@v15.0.0/mod.ts";
+import { Error as ResultError, Ok } from "../prelude.mjs";
 
 const dictToObject = (dict) => {
   const items = {};
@@ -19,11 +15,68 @@ const dictToObject = (dict) => {
   return items;
 };
 
-export const getHandler = (queryResolvers) => {
-  const items = dictToObject(queryResolvers.root.array);
+const handleResolverResponse = (resolver) => async (one, two, three) => {
+  const result = await resolver(one, two, three);
+  if (result instanceof ResultError) {
+    return new Error(result[0]);
+  } else if (result instanceof Ok) {
+    return result[0];
+  }
+  return result;
+};
 
+export const getHandler = (
+  typeString,
+  queryResolvers,
+  mutationResolvers,
+  otherResolvers
+) => {
+  const typeDefs = gql`
+    ${typeString}
+  `;
+
+  const processedOtherResolvers = Object.fromEntries(
+    Object.entries(dictToObject(otherResolvers.root.array)).map(
+      ([key, type]) => [
+        key,
+        new GraphQLScalarType({
+          name: key,
+          serialize(value) {
+            console.log("serialize");
+            return fn(value);
+          },
+          parseValue(value) {
+            console.log("parseValue");
+
+            return fn(value);
+          },
+          parseLiteral(ast) {
+            const out = type.value(ast.value);
+            if (out instanceof Ok) {
+              return out["0"];
+            }
+            return out;
+          },
+        }),
+      ]
+    )
+  );
+
+  const processedQueryResolvers = Object.fromEntries(
+    Object.entries(dictToObject(queryResolvers.root.array)).map(
+      ([key, resolver]) => [key, handleResolverResponse(resolver)]
+    )
+  );
+
+  const processedMutationResolvers = Object.fromEntries(
+    Object.entries(dictToObject(mutationResolvers.root.array)).map(
+      ([key, resolver]) => [key, handleResolverResponse(resolver)]
+    )
+  );
   const resolvers = {
-    Query: { ...items },
+    Query: processedQueryResolvers,
+    Mutation: processedMutationResolvers,
+    ...processedOtherResolvers,
   };
 
   const schema = makeExecutableSchema({ typeDefs, resolvers });
@@ -43,13 +96,23 @@ const applyCORSHeaders = (headers) => {
     "Access-Control-Allow-Credentials": true,
     "Access-Control-Allow-Headers": "Content-Type, Authorization",
   };
-  for (let i in corsHeaders) {
+  for (const i in corsHeaders) {
     headers.set(i, corsHeaders[i]);
   }
 };
 
-export const serve = (queryResolvers) => {
-  const handler = getHandler(queryResolvers);
+export const serve = (
+  typeString,
+  queryResolvers,
+  mutationResolvers,
+  otherResolvers
+) => {
+  const handler = getHandler(
+    typeString,
+    queryResolvers,
+    mutationResolvers,
+    otherResolvers
+  );
 
   Deno.serve(
     {
@@ -59,11 +122,12 @@ export const serve = (queryResolvers) => {
       const { pathname } = new URL(request.url);
       const clone = request.clone();
 
+      let body;
       try {
-        const body = await clone.json();
+        body = await clone.json();
 
         if (isDev() && body.operationName !== "IntrospectionQuery") {
-          console.log("Incoming request", request, body.operationName);
+          console.log("Incoming request", body.operationName);
         }
       } catch (error) {}
 
@@ -73,10 +137,18 @@ export const serve = (queryResolvers) => {
         if (request.method === "OPTIONS") {
           const response = new Response(null);
           applyCORSHeaders(response.headers);
-          
+
           return response;
         }
         const response = await handler(request);
+
+        const clone = response.clone();
+
+        if (isDev() && body?.operationName !== "IntrospectionQuery") {
+          const result = await clone.text();
+          console.log("Outgoing response", result);
+        }
+
         applyCORSHeaders(response.headers);
         return response;
       } else {

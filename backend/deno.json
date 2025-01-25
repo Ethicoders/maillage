@@ -1,0 +1,6 @@
+{
+  "imports": {
+    "@felix/argon2": "jsr:@felix/argon2@^2.0.2",
+    "dbmate": "npm:dbmate@^2.24.2"
+  }
+}

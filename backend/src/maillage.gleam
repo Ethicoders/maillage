@@ -6,18 +6,65 @@ import gleam/option
 import glen.{type Request, type Response}
 import glen/status
 import glen/ws
+import graphql
 import repeatedly
+import types/email
+
+import types/password
+
+import api/email as api_email
+import api/password as api_password
+import api/user
+
+pub type Scalars(e) {
+  Email(value: fn(String) -> email.Email)
+  Password(value: fn(String) -> Result(password.Password, String))
+}
 
 @external(javascript, "./graphql.js", "serve")
-pub fn serve(resolvers: Dict(String, fn() -> String)) -> a
+pub fn serve(
+  type_string: String,
+  query_resolvers: Dict(String, fn() -> q),
+  mutation_resolvers: Dict(
+    String,
+    fn(a, graphql.Variables(b), graphql.Context(c)) -> m,
+  ),
+  other_resolvers: Dict(String, Scalars(e)),
+  // other_resolvers: Dict(String, fn(v) -> o),
+) -> a
 
 fn hello() -> String {
   "Hello, World!!!"
 }
 
 pub fn main() {
+  let type_string =
+    "type Query {
+      hello: String
+    }
+scalar Email
+
+scalar Password
+
+    type User {name: String!, slug: String!}
+    
+  input RegisterRequest {name: String!, email: Email!, password: Password!}
+
+    type Mutation {
+      register(request: RegisterRequest!): User
+    }"
+
   let query_resolvers = dict.new() |> dict.insert("hello", hello)
-  serve(query_resolvers)
+  let mutation_resolvers = dict.new() |> dict.insert("register", user.register)
+  // let other_resolvers =
+  //   dict.new()
+  //   |> dict.insert("Password", api_password.validate)
+  //   |> dict.insert("Email", api_email.validate)
+  let other_resolvers =
+    dict.new()
+    |> dict.insert("Email", Email(api_email.validate))
+    |> dict.insert("Password", Password(api_password.validate))
+  serve(type_string, query_resolvers, mutation_resolvers, other_resolvers)
 }
 
 pub fn handle_req(req: Request) -> Promise(Response) {

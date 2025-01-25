@@ -1,0 +1,185 @@
+import gleam/dynamic.{type Dynamic}
+import gleam/dynamic/decode.{type Decoder}
+import gleam/io
+import gleam/javascript/promise
+import gleam/list
+import gleam/option.{type Option, None, Some}
+import gleam/result
+import pog.{type Connection}
+import types/email.{type Email}
+
+pub type UserId {
+  UserId(value: Int)
+}
+
+pub fn id_to_int(id: UserId) -> Int {
+  id.value
+}
+
+pub fn decode_user_id(d: Dynamic) {
+  use value <- result.try(dynamic.int(d))
+  Ok(UserId(value))
+}
+
+pub type User {
+  User(
+    id: UserId,
+    name: String,
+    email: String,
+    slug: String,
+    // password_digest: String,
+    // remember_digest: String,
+    // created_at: String,
+    // updated: birl.Time,
+  )
+}
+
+pub fn decode_user_sql() -> Decoder(User) {
+  {
+    use id <- decode.field("id", decode.int)
+    use name <- decode.field("name", decode.string)
+    use email <- decode.field("email", decode.string)
+    // use password_digest <- decode.field("password_digest", decode.string)
+    // use created_at <- decode.field("created_at", decode.string)
+    use slug <- decode.field("slug", decode.string)
+    // use x5 <- decode.field("", decode.string)
+
+    // birl.from_naive
+
+    // let user_email = email.parse_safe(email)
+    // use x6 <- decode.field(4, pog.timestamp_decoder())
+    // use x7 <- decode.field(4, pog.timestamp_decoder())
+    decode.success(User(UserId(id), name, email, slug))
+  }
+}
+
+pub fn create(
+  conn: Connection,
+  name: String,
+  email: String,
+  password_hash: String,
+) -> promise.Promise(Result(User, pog.QueryError)) {
+  let sql =
+    "
+        INSERT INTO public.user
+        (name, slug, email, password_digest)
+        VALUES
+        ($1, $2, $3, $4)
+        RETURNING
+            id,
+            name,
+            slug,
+            email,
+            password_digest,
+            created_at::text;
+    "
+
+  let query =
+    pog.query(sql)
+    |> pog.parameter(pog.text(name))
+    |> pog.parameter(pog.text(name))
+    |> pog.parameter(pog.text(email))
+    |> pog.parameter(pog.text(password_hash))
+    |> pog.returning(decode_user_sql())
+  use outcome <- promise.map_try(pog.execute(query, conn))
+  let assert Ok(user) = list.first(outcome.rows)
+
+  Ok(user)
+}
+
+pub fn get_by_id(
+  conn: Connection,
+  id: UserId,
+) -> promise.Promise(Result(Option(User), pog.QueryError)) {
+  let sql =
+    "
+    SELECT
+        id,
+        email_address,
+        password_hash,
+        created_at::text
+    FROM users
+    WHERE id = $1
+  "
+
+  // use result <- result.try({
+  //   pog.execute(sql, conn, [id.value |> pog.int()], decode_user_sql)
+  // })
+
+  let query =
+    pog.query(sql)
+    |> pog.parameter(pog.int(id.value))
+    |> pog.returning(decode_user_sql())
+
+  use outcome <- promise.map_try(pog.execute(query, conn))
+  // use items <- result.try({ pog.execute(query, conn) })
+
+  case outcome.rows {
+    [] -> Ok(None)
+    [user] -> Ok(Some(user))
+    _ -> panic as "Unreachable"
+  }
+}
+
+pub fn get_by_ids(
+  conn: Connection,
+  ids: List(UserId),
+) -> promise.Promise(Result(List(User), pog.QueryError)) {
+  let sql =
+    "
+    SELECT
+        id,
+        email_address,
+        password_hash,
+        created_at::text
+    FROM users
+    WHERE id IN $1
+  "
+
+  // use result <- result.try({
+  //   pog.execute(
+  //     sql,
+  //     conn,
+  //     [ids |> list.map(fn(id) { id.value }) |> pog.array()],
+  //     decode_user_sql,
+  //   )
+  // })
+
+  let query =
+    pog.query(sql)
+    |> pog.parameter(pog.array(pog.int, ids |> list.map(fn(id) { id.value })))
+    |> pog.returning(decode_user_sql())
+
+  use outcome <- promise.map_try(pog.execute(query, conn))
+
+  Ok(outcome.rows)
+}
+
+pub fn get_by_email(
+  conn: Connection,
+  email: Email,
+) -> promise.Promise(Result(Option(User), pog.QueryError)) {
+  let sql =
+    "
+    SELECT
+        id,
+        email_address,
+        password_hash,
+        created_at::text
+    FROM users
+    WHERE email_address = $1
+  "
+
+  let query =
+    pog.query(sql)
+    |> pog.parameter(email |> email.to_string() |> pog.text())
+    |> pog.returning(decode_user_sql())
+
+  use outcome <- promise.map_try(pog.execute(query, conn))
+
+  case outcome.rows {
+    [] -> Ok(None)
+    [user] -> Ok(Some(user))
+    _ -> panic as "Unreachable"
+  }
+}
