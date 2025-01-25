@@ -27,7 +27,7 @@ pub type User {
     name: String,
     email: String,
     slug: String,
-    // password_digest: String,
+    password_digest: Option(String),
     // remember_digest: String,
     // created_at: String,
     // updated: birl.Time,
@@ -39,7 +39,11 @@ pub fn decode_user_sql() -> Decoder(User) {
     use id <- decode.field("id", decode.int)
     use name <- decode.field("name", decode.string)
     use email <- decode.field("email", decode.string)
-    // use password_digest <- decode.field("password_digest", decode.string)
+    use password_digest <- decode.optional_field(
+      "password_digest",
+      None,
+      decode.optional(decode.string),
+    )
     // use created_at <- decode.field("created_at", decode.string)
     use slug <- decode.field("slug", decode.string)
     // use x5 <- decode.field("", decode.string)
@@ -49,7 +53,7 @@ pub fn decode_user_sql() -> Decoder(User) {
     // let user_email = email.parse_safe(email)
     // use x6 <- decode.field(4, pog.timestamp_decoder())
     // use x7 <- decode.field(4, pog.timestamp_decoder())
-    decode.success(User(UserId(id), name, email, slug))
+    decode.success(User(UserId(id), name, email, slug, password_digest))
   }
 }
 
@@ -98,7 +102,7 @@ pub fn get_by_id(
         email_address,
         password_hash,
         created_at::text
-    FROM users
+    FROM user
     WHERE id = $1
   "
 
@@ -130,9 +134,9 @@ pub fn get_by_ids(
     SELECT
         id,
         email_address,
-        password_hash,
+        password_digest,
         created_at::text
-    FROM users
+    FROM user
     WHERE id IN $1
   "
 
@@ -157,22 +161,24 @@ pub fn get_by_ids(
 
 pub fn get_by_email(
   conn: Connection,
-  email: Email,
+  email: String,
 ) -> promise.Promise(Result(Option(User), pog.QueryError)) {
   let sql =
     "
     SELECT
         id,
-        email_address,
-        password_hash,
+        name,
+        email,
+        slug,
+        password_digest,
         created_at::text
-    FROM users
-    WHERE email_address = $1
+    FROM public.user
+    WHERE email = $1
   "
 
   let query =
     pog.query(sql)
-    |> pog.parameter(email |> email.to_string() |> pog.text())
+    |> pog.parameter(email |> pog.text())
     |> pog.returning(decode_user_sql())
 
   use outcome <- promise.map_try(pog.execute(query, conn))

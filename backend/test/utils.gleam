@@ -31,3 +31,15 @@ pub fn with_test_transaction(
     }
   })
 }
+
+@external(javascript, "./utils.js", "expect")
+fn do_expect(module: String, function: String, to_return: a) -> Nil
+
+pub fn expect(
+  module: String,
+  function: String,
+  to_return: a,
+) -> Result(Bool, String) {
+  do_expect(module, function, to_return)
+  Ok(True)
+}
