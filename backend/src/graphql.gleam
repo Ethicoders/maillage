@@ -1,5 +1,5 @@
-pub type Context(variables) {
-  Context(request: variables)
+pub type Context {
+  Context
 }
 
 pub type Request(variables) {

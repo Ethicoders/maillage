@@ -64,13 +64,13 @@ export const getHandler = (
 
   const processedQueryResolvers = Object.fromEntries(
     Object.entries(dictToObject(queryResolvers.root.array)).map(
-      ([key, resolver]) => [key, handleResolverResponse(resolver)]
+      ([key, type]) => [key, handleResolverResponse(type.value)]
     )
   );
 
   const processedMutationResolvers = Object.fromEntries(
     Object.entries(dictToObject(mutationResolvers.root.array)).map(
-      ([key, resolver]) => [key, handleResolverResponse(resolver)]
+      ([key, type]) => [key, handleResolverResponse(type.value)]
     )
   );
   const resolvers = {

@@ -14,9 +14,24 @@ import types/password
 
 import api/email as api_email
 import api/password as api_password
-import api/user
+import api/user as api_user
 
-pub type Scalars(e) {
+pub type Query(a) {
+  Hello(value: fn(a, graphql.Variables(Nil), graphql.Context) -> String)
+}
+
+pub type Mutations(a) {
+  Register(
+    value: fn(a, graphql.Variables(api_user.RegisterRequest), graphql.Context) ->
+      promise.Promise(Result(api_user.User, String)),
+  )
+  Login(
+    value: fn(a, graphql.Variables(api_user.LoginRequest), graphql.Context) ->
+      promise.Promise(Result(api_user.User, String)),
+  )
+}
+
+pub type Scalars {
   Email(value: fn(String) -> email.Email)
   Password(value: fn(String) -> Result(password.Password, String))
 }
@@ -24,16 +39,13 @@ pub type Scalars(e) {
 @external(javascript, "./graphql.js", "serve")
 pub fn serve(
   type_string: String,
-  query_resolvers: Dict(String, fn() -> q),
-  mutation_resolvers: Dict(
-    String,
-    fn(a, graphql.Variables(b), graphql.Context(c)) -> m,
-  ),
-  other_resolvers: Dict(String, Scalars(e)),
+  query_resolvers: Dict(String, Query(f)),
+  mutation_resolvers: Dict(String, Mutations(f)),
+  other_resolvers: Dict(String, Scalars),
   // other_resolvers: Dict(String, fn(v) -> o),
 ) -> a
 
-fn hello() -> String {
+fn hello(_, _vars, _ctx) -> String {
   "Hello, World!!!"
 }
 
@@ -49,17 +61,18 @@ scalar Password
     type User {name: String!, slug: String!}
     
   input RegisterRequest {name: String!, email: Email!, password: Password!}
+  input LoginRequest {email: Email!, password: Password!}
 
     type Mutation {
       register(request: RegisterRequest!): User
+      login(request: LoginRequest!): User
     }"
 
-  let query_resolvers = dict.new() |> dict.insert("hello", hello)
-  let mutation_resolvers = dict.new() |> dict.insert("register", user.register)
-  // let other_resolvers =
-  //   dict.new()
-  //   |> dict.insert("Password", api_password.validate)
-  //   |> dict.insert("Email", api_email.validate)
+  let query_resolvers = dict.new() |> dict.insert("hello", Hello(hello))
+  let mutation_resolvers =
+    dict.new()
+    |> dict.insert("register", Register(api_user.register))
+    |> dict.insert("login", Login(api_user.login))
   let other_resolvers =
     dict.new()
     |> dict.insert("Email", Email(api_email.validate))

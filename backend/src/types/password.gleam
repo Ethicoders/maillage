@@ -2,6 +2,7 @@ import argon2
 import gleam/bit_array
 import gleam/bool
 import gleam/int
+import gleam/io
 import gleam/javascript/promise
 import gleam/list
 import gleam/regexp
@@ -94,7 +95,7 @@ pub fn hash(password: Password) -> promise.Promise(String) {
 }
 
 pub fn valid(password: Password, hash: String) -> promise.Promise(Bool) {
-  argon2.verify(to_string(password), hash)
+  argon2.verify(hash, to_string(password))
 }
 
 pub type PasswordPolicy {
