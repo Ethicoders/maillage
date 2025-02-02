@@ -1,12 +1,10 @@
 import gleam/dynamic.{type Dynamic}
 import gleam/dynamic/decode.{type Decoder}
-import gleam/io
 import gleam/javascript/promise
 import gleam/list
 import gleam/option.{type Option, None, Some}
 import gleam/result
 import pog.{type Connection}
-import types/email.{type Email}
 
 pub type UserId {
   UserId(value: Int)
@@ -100,7 +98,7 @@ pub fn get_by_id(
     SELECT
         id,
         email_address,
-        password_hash,
+        password_digest,
         created_at::text
     FROM user
     WHERE id = $1
@@ -179,6 +177,37 @@ pub fn get_by_email(
   let query =
     pog.query(sql)
     |> pog.parameter(email |> pog.text())
+    |> pog.returning(decode_user_sql())
+
+  use outcome <- promise.map_try(pog.execute(query, conn))
+
+  case outcome.rows {
+    [] -> Ok(None)
+    [user] -> Ok(Some(user))
+    _ -> panic as "Unreachable"
+  }
+}
+
+pub fn get_by_session_token(
+  conn: Connection,
+  session_token: String,
+) -> promise.Promise(Result(Option(User), pog.QueryError)) {
+  let sql =
+    "
+    SELECT
+        id,
+        name,
+        email,
+        slug,
+        password_digest,
+        created_at::text
+    FROM public.user
+    WHERE session_token = $1
+  "
+
+  let query =
+    pog.query(sql)
+    |> pog.parameter(session_token |> pog.text())
     |> pog.returning(decode_user_sql())
 
   use outcome <- promise.map_try(pog.execute(query, conn))

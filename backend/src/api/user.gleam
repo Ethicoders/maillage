@@ -1,8 +1,9 @@
+import core/user as core_user
 import db/db
 import db/user
 import gleam/io
 import gleam/javascript/promise
-import gleam/option
+import gleam/result
 import graphql
 import pog
 import types/email.{type Email}
@@ -84,45 +85,7 @@ pub fn login(
   let email = variables.request.email
   let password = variables.request.password
 
-  case db.get_db() {
-    Ok(connection) -> {
-      promise.await(
-        user.get_by_email(connection, email.to_string(email)),
-        fn(res) {
-          case res {
-            Ok(option) ->
-              case option {
-                option.Some(item) -> {
-                  case item.password_digest {
-                    option.Some(password_digest) ->
-                      promise.await(
-                        types_password.valid(password, password_digest),
-                        fn(is_matching) {
-                          case is_matching {
-                            True -> {
-                              let user =
-                                User(
-                                  id: item.id.value,
-                                  name: item.name,
-                                  email: item.email,
-                                  slug: item.slug,
-                                )
-                              promise.resolve(Ok(user))
-                            }
-                            False -> promise.resolve(Error("Invalid password"))
-                          }
-                        },
-                      )
-                    option.None -> promise.resolve(Error(""))
-                  }
-                }
-                option.None -> promise.resolve(Error("User not found"))
-              }
-            Error(e) -> promise.resolve(Error(""))
-          }
-        },
-      )
-    }
-    Error(_) -> promise.resolve(Error("Database connection failed"))
-  }
+  use res <- promise.map(core_user.login(email, password))
+  use item <- result.map(res)
+  User(id: item.id.value, name: item.name, email: item.email, slug: item.slug)
 }

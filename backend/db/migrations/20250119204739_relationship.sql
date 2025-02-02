@@ -5,8 +5,8 @@ CREATE TABLE relationship (
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (follower_id, followed_id),
-  FOREIGN KEY (follower_id) REFERENCES users(id),
-  FOREIGN KEY (followed_id) REFERENCES users(id),
+  FOREIGN KEY (follower_id) REFERENCES "user"(id),
+  FOREIGN KEY (followed_id) REFERENCES "user"(id),
   UNIQUE (follower_id, followed_id)
 );
 

@@ -5,6 +5,11 @@ import * as glen from "../glen/glen.mjs";
 import * as app from "./maillage.mjs";
 import { GraphQLScalarType } from "https://deno.land/x/graphql_deno@v15.0.0/mod.ts";
 import { Error as ResultError, Ok } from "../prelude.mjs";
+import {
+  deleteCookie,
+  setCookie,
+  getCookies,
+} from "https://deno.land/std/http/cookie.ts";
 
 const dictToObject = (dict) => {
   const items = {};
@@ -15,8 +20,11 @@ const dictToObject = (dict) => {
   return items;
 };
 
-const handleResolverResponse = (resolver) => async (one, two, three) => {
-  const result = await resolver(one, two, three);
+const handleResolverResponse = (resolver) => async (one, two, ctx) => {
+  console.log(ctx);
+  
+  const result = await resolver(one, two,  {request: glen.convert_request(ctx.request)});
+
   if (result instanceof ResultError) {
     return new Error(result[0]);
   } else if (result instanceof Ok) {
@@ -42,12 +50,9 @@ export const getHandler = (
         new GraphQLScalarType({
           name: key,
           serialize(value) {
-            console.log("serialize");
             return fn(value);
           },
           parseValue(value) {
-            console.log("parseValue");
-
             return fn(value);
           },
           parseLiteral(ast) {
@@ -101,6 +106,16 @@ const applyCORSHeaders = (headers) => {
   }
 };
 
+export const generateSessionToken = (length = 32) => {
+  const characters =
+    "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_";
+  let token = "";
+  for (let i = 0; i < length; i++) {
+    token += characters.charAt(Math.floor(Math.random() * characters.length));
+  }
+  return token;
+}
+
 export const serve = (
   typeString,
   queryResolvers,
@@ -119,6 +134,7 @@ export const serve = (
       port: 8000,
     },
     async (request) => {
+      
       const { pathname } = new URL(request.url);
       const clone = request.clone();
 
@@ -128,6 +144,8 @@ export const serve = (
 
         if (isDev() && body.operationName !== "IntrospectionQuery") {
           console.log("Incoming request", body.operationName);
+      console.log(request);
+
         }
       } catch (error) {}
 
@@ -144,12 +162,26 @@ export const serve = (
 
         const clone = response.clone();
 
+        const result = await clone.json();
         if (isDev() && body?.operationName !== "IntrospectionQuery") {
-          const result = await clone.text();
           console.log("Outgoing response", result);
         }
 
         applyCORSHeaders(response.headers);
+                if ("login" in result?.data) {
+                  response.headers.set(
+                    "Set-Cookie",
+                    `msess=${generateSessionToken(
+                      32
+                    )}; Path=/; HttpOnly; Secure; SameSite=Strict`
+                  );
+
+                  // response.headers.set(
+                  //   "Set-Cookie",
+                  //   "msess=token; HttpOnly; Secure; SameSite=Strict"
+                  // );
+                  console.log(response);
+                }
         return response;
       } else {
         const req = glen.convert_request(request);

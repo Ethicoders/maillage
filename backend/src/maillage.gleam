@@ -1,7 +1,10 @@
 import gleam/dict.{type Dict}
+import gleam/dynamic/decode
 import gleam/http
 import gleam/int
+import gleam/io
 import gleam/javascript/promise.{type Promise}
+import gleam/json
 import gleam/option
 import glen.{type Request, type Response}
 import glen/status
@@ -14,7 +17,9 @@ import types/password
 
 import api/email as api_email
 import api/password as api_password
+import api/post as api_post
 import api/user as api_user
+import core/user as core_user
 
 pub type Query(a) {
   Hello(value: fn(a, graphql.Variables(Nil), graphql.Context) -> String)
@@ -28,6 +33,10 @@ pub type Mutations(a) {
   Login(
     value: fn(a, graphql.Variables(api_user.LoginRequest), graphql.Context) ->
       promise.Promise(Result(api_user.User, String)),
+  )
+  CreatePost(
+    value: fn(a, graphql.Variables(api_post.CreatePostRequest), graphql.Context) ->
+      promise.Promise(Result(api_post.Post, String)),
   )
 }
 
@@ -45,6 +54,9 @@ pub fn serve(
   // other_resolvers: Dict(String, fn(v) -> o),
 ) -> a
 
+@external(javascript, "./graphql.js", "generateSessionToken")
+fn generate_session_token(length: Int) -> String
+
 fn hello(_, _vars, _ctx) -> String {
   "Hello, World!!!"
 }
@@ -59,13 +71,16 @@ scalar Email
 scalar Password
 
     type User {name: String!, slug: String!}
+    type Post {content: String!, author: Int!}
     
   input RegisterRequest {name: String!, email: Email!, password: Password!}
   input LoginRequest {email: Email!, password: Password!}
+  input CreatePostRequest {content: String!}
 
     type Mutation {
       register(request: RegisterRequest!): User
       login(request: LoginRequest!): User
+      createPost(request: CreatePostRequest!): Post
     }"
 
   let query_resolvers = dict.new() |> dict.insert("hello", Hello(hello))
@@ -73,11 +88,24 @@ scalar Password
     dict.new()
     |> dict.insert("register", Register(api_user.register))
     |> dict.insert("login", Login(api_user.login))
+    |> dict.insert("createPost", CreatePost(api_post.create))
   let other_resolvers =
     dict.new()
     |> dict.insert("Email", Email(api_email.validate))
     |> dict.insert("Password", Password(api_password.validate))
   serve(type_string, query_resolvers, mutation_resolvers, other_resolvers)
+}
+
+fn handle_result(
+  target: Result(Promise(Response), Promise(String)),
+) -> Promise(Response) {
+  case target {
+    Ok(p) -> p
+    Error(p) -> {
+      use error <- promise.map(p)
+      glen.json(error, 500)
+    }
+  }
 }
 
 pub fn handle_req(req: Request) -> Promise(Response) {
@@ -90,6 +118,8 @@ pub fn handle_req(req: Request) -> Promise(Response) {
 
   case glen.path_segments(req) {
     [] -> index_page(req)
+    // ["login"] -> login(req)
+    ["login"] -> login(req)
     ["counter"] -> counter_websocket(req)
     _ -> not_found(req)
   }
@@ -102,6 +132,63 @@ pub fn index_page(req: Request) -> Promise(Response) {
   "Let's load the frontend here!"
   |> glen.html(status.ok)
   |> promise.resolve
+}
+
+pub fn decode_login() -> decode.Decoder(#(String, String)) {
+  use email <- decode.field("email", decode.string)
+  use password <- decode.field("password", decode.string)
+  decode.success(#(email, password))
+}
+
+fn login(req: Request) -> Promise(Response) {
+  use <- glen.require_method(req, http.Post)
+  let decoder = decode_login()
+
+  use res <- promise.await(glen.read_json_body(req))
+  let out = case res {
+    Ok(body) -> {
+      case decode.run(body, decoder) {
+        Ok(decoded) -> {
+          case email.parse(decoded.0) {
+            Ok(email) -> {
+              case password.create(decoded.1) {
+                Ok(password) -> {
+                  promise.map(core_user.login(email, password), fn(user_result) {
+                    case user_result {
+                      Ok(found_user) -> {
+                        let token = generate_session_token(32)
+
+                        glen.json(
+                          json.to_string(
+                            json.object([
+                              #("name", json.string(found_user.name)),
+                              #("slug", json.string(found_user.slug)),
+                              #("token", json.string(token)),
+                            ]),
+                          ),
+                          200,
+                        )
+                      }
+                      Error(e) -> {
+                        io.debug(e)
+                        panic
+                      }
+                    }
+                  })
+                }
+
+                Error(e) -> panic
+              }
+            }
+            Error(e) -> panic
+          }
+        }
+        Error(e) -> panic
+      }
+    }
+    Error(e) -> panic
+  }
+  out
 }
 
 pub fn not_found(_req: Request) -> Promise(Response) {

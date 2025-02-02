@@ -5,7 +5,7 @@ CREATE TABLE post (
   user_id INTEGER NOT NULL,
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  FOREIGN KEY (user_id) REFERENCES users(id)
+  FOREIGN KEY (user_id) REFERENCES "user"(id)
 );
 CREATE UNIQUE INDEX index_posts_on_user_id_and_created_at ON post(user_id, created_at)
 

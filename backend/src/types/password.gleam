@@ -2,7 +2,6 @@ import argon2
 import gleam/bit_array
 import gleam/bool
 import gleam/int
-import gleam/io
 import gleam/javascript/promise
 import gleam/list
 import gleam/regexp
