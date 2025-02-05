@@ -1,75 +1,183 @@
-import gleam/dynamic.{string}
-import gleam/option.{type Option, None, Some}
-import gleamql
+import gleam/dynamic
+import gleam/io
+import gleam/list
+import gleam/option
+import gleam/result
+import gleam/string
+import gleam/uri.{type Uri}
 import lustre
+import lustre/attribute
 import lustre/effect.{type Effect}
 import lustre/element.{type Element}
 import lustre/element/html
 import lustre/event
-import lustre_http
+import lustre/ui
+import lustre/ui/cluster
+import model.{type Model, Model}
+import modem
+import shared.{type Msg, AuthMessage, AuthResponse, OnChangeView}
 
-type Model {
-  Model(hello: Option(Hello))
+import ui/views/auth
+import ui/views/authmsg.{AuthSwitchAction}
+
+// MAIN ------------------------------------------------------------------------
+
+pub fn main() {
+  let app = lustre.application(init, update, view)
+  let assert Ok(_) = lustre.start(app, "#app", Nil)
 }
 
-fn init(_flags) -> #(Model, Effect(Msg)) {
-  #(Model(hello: None), effect.none())
+// MODEL -----------------------------------------------------------------------
+
+// type Model {
+//   Model(current_route: Route, guests: List(Guest), new_guest_name: String)
+// }
+
+type Guest {
+  Guest(slug: String, name: String)
 }
 
-pub type Data {
-  Data(hello: String)
+fn init(flags) -> #(Model, Effect(Msg)) {
+  let #(auth_model, _effect) = auth.init(flags)
+  #(Model(auth_model:, view: shared.Main), modem.init(on_route_change))
 }
 
-pub type Hello {
-  Hello(hello: String)
-}
-
-const simple_query = "query SayHello {
-  hello
-}"
-
-fn sayhello() -> Effect(Msg) {
-  let res =
-    gleamql.new()
-    |> gleamql.set_query(simple_query)
-    // |> gleamql.set_variable("code", json.string("GB"))
-    |> gleamql.set_uri("http://localhost:8000/graphql")
-    |> gleamql.set_header("Content-Type", "application/json")
-  let decoder =
-    dynamic.decode1(
-      Hello,
-      dynamic.field("data", dynamic.field("hello", string)),
-    )
-  gleamql.send(res, lustre_http.expect_json(decoder, ApiUpdatedQuote))
-}
-
-pub opaque type Msg {
-  UserClickedRefresh
-  ApiUpdatedQuote(Result(Hello, lustre_http.HttpError))
-}
-
-fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
-  case msg {
-    UserClickedRefresh -> #(model, sayhello())
-    ApiUpdatedQuote(Ok(hello)) -> #(Model(hello: Some(hello)), effect.none())
-    ApiUpdatedQuote(Error(_)) -> #(model, effect.none())
+fn on_route_change(uri: Uri) -> Msg {
+  case uri.path_segments(uri.path) {
+    // ["welcome", guest] -> OnRouteChange(WelcomeGuest(guest))
+    ["auth"] -> OnChangeView(shared.Auth)
+    _ -> OnChangeView(shared.Main)
   }
 }
 
-fn view(model: Model) -> Element(Msg) {
-  let styles = [#("width", "100vw"), #("height", "100vh"), #("padding", "1rem")]
+// UPDATE ----------------------------------------------------------------------
 
-  html.div([], [
-    html.h1([], [element.text("Hello, world.")]),
-    html.h2([], [element.text("Welcome to Lustre.")]),
-    html.button([event.on_click(UserClickedRefresh)], [
-      element.text("Say hello"),
+fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
+  case msg {
+    OnChangeView(route) -> #(Model(..model, view: route), effect.none())
+    AuthMessage(auth_msg) -> {
+      case auth_msg {
+        AuthSwitchAction(action) -> {
+          io.debug(action)
+          #(
+            Model(..model, auth_model: auth.Model(action, hello: option.None)),
+            effect.none(),
+          )
+        }
+        // switch auth action
+        // login/register
+      }
+      // auth.update(#(model.auth_model, effect.none()), message)
+      // #(Model(..model), effect.none())
+    }
+    AuthResponse(_) -> todo
+    // UserUpdatedNewGuestName(name) -> #(Model(..model), effect.none())
+    // UserAddedNewGuest(guest) -> #(
+    //   Model(
+    //     ..model,
+    //     // guests: list.append(model.guests, [guest]),
+    //   // new_guest_name: "",
+    //   ),
+    //   effect.none(),
+    // )
+    // Auth -> 
+  }
+}
+
+// VIEW ------------------------------------------------------------------------
+
+fn view(model: Model) -> Element(Msg) {
+  let styles = [#("margin", "15vh")]
+
+  let page = case model.view {
+    shared.Auth -> view_auth(model)
+    shared.Main -> view_home(model)
+    // Home -> view_home(model)
+    // Auth -> view_auth(model)
+    // WelcomeGuest(name) -> view_welcome(model, name)
+  }
+
+  ui.stack([attribute.style(styles)], [view_nav(model), page])
+}
+
+fn view_home(model: Model) {
+  // let new_guest_input = fn(event) {
+  //   use key_code <- result.try(dynamic.field("key", dynamic.string)(event))
+  //   case key_code {
+  //     "Enter" -> {
+  //       let guest_slug =
+  //         model.new_guest_name
+  //         |> string.replace(" ", "-")
+  //         |> string.lowercase
+  //       Ok(
+  //         UserAddedNewGuest(Guest(name: model.new_guest_name, slug: guest_slug)),
+  //       )
+  //     }
+  //     _ -> {
+  //       use value <- result.try(event.value(event))
+  //       Ok(UserUpdatedNewGuestName(value))
+  //     }
+  //   }
+  // }
+
+  view_body([
+    view_title("Welcome to the Party 🏡"),
+    html.p([], [element.text("Please sign the guest book:")]),
+    ui.input([
+      // event.on("keyup", new_guest_input),
+    // attribute.value(model.new_guest_name),
     ]),
   ])
 }
 
-pub fn main() {
-  let app = lustre.application(init, update, view)
-  let assert Ok(_) = lustre.start(app, "div", Nil)
-  Nil
+fn view_auth(model: Model) {
+  auth.view(model.auth_model)
+  // case auth.main() {
+  //   Ok(_) -> view_body([view_title("Auth 🏡"), lustre.element("auth")])
+  //   Error(_) -> panic as "Failed to create auth app"
+  // }
+}
+
+fn view_welcome(model: Model, slug) -> Element(a) {
+  // let guest =
+  //   model.guests
+  //   |> list.find(fn(guest: Guest) { guest.slug == slug })
+
+  // let title = case guest {
+  //   Ok(guest) -> view_title("Hello, " <> guest.name <> "! 🎉")
+  //   _ -> view_title("Sorry ... didn't quite catch that.")
+  // }
+  let title = view_title("")
+
+  view_body([title])
+}
+
+fn view_nav(model: Model) -> Element(a) {
+  let item_styles = [#("text-decoration", "underline")]
+
+  let view_nav_item = fn(path, text) {
+    html.a([attribute.href("/" <> path), attribute.style(item_styles)], [
+      element.text(text),
+    ])
+  }
+
+  // let guest_nav_items =
+  //   model.guests
+  //   |> list.map(fn(guest: Guest) {
+  //     view_nav_item("welcome/" <> guest.slug, guest.name)
+  //   })
+
+  cluster.of(html.nav, [], [
+    view_nav_item("", "Home"),
+    view_nav_item("auth", "Auth"),
+    // ..guest_nav_isstems
+  ])
+}
+
+fn view_body(children) {
+  ui.centre([], ui.stack([], children))
+}
+
+fn view_title(text) {
+  html.h1([], [element.text(text)])
 }
