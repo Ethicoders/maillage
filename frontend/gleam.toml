@@ -2,12 +2,13 @@ name = "maillage"
 version = "1.0.0"
 
 target = "javascript"
+runtime = "deno"
 
 [javascript]
 typescript_declarations = true
 
-[lustre-dev.start]
-proxy = { from = "/", to = "http://localhost:8080" }
+# [lustre-dev.start]
+# proxy = { from = "/", to = "http://localhost:8080" }
 
 [dependencies]
 gleam_stdlib = ">= 0.34.0 and < 2.0.0"
