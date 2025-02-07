@@ -10,6 +10,7 @@ import lustre/effect.{type Effect}
 import lustre/element.{type Element}
 import lustre/element/html
 import lustre/event
+import ui/layout
 
 fn init(_flags: a) -> #(Model, Effect(Msg)) {
   let #(fs, msg) = feed.init()
@@ -27,24 +28,7 @@ fn update(model: Model, msg: app.Msg) -> #(Model, Effect(app.Msg)) {
 }
 
 fn view(model: Model) -> Element(app.Msg) {
-  let styles = [#("width", "100vw"), #("height", "100vh"), #("padding", "1rem")]
-  io.debug(model)
-  html.div([], [
-    html.h1([], [element.text("Hello, world.")]),
-    html.h2([], [element.text("Welcome to Lustre.")]),
-    html.button(
-      [
-        event.on_click(
-          app.FeedMsg(msg.LoadMore(
-            model.feed_state.to,
-            model.feed_state.to + 10,
-          )),
-        ),
-      ],
-      [element.text("Say hello")],
-    ),
-    feed.render(model.feed_state),
-  ])
+  layout.layout(model, [feed.render(model.feed_state)])
 }
 
 pub fn main() {

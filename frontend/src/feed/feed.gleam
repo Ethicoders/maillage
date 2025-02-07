@@ -4,9 +4,11 @@ import feed/state.{type FeedState, FeedState}
 import gleam/int
 import gleam/io
 import gleam/list
+import lustre/attribute
 import lustre/effect.{type Effect}
 import lustre/element
 import lustre/element/html
+import lustre/event
 
 pub fn init() -> #(FeedState, Effect(Msg)) {
   #(FeedState(0, 10, []), load_msg(0, 10))
@@ -34,7 +36,15 @@ pub fn render(state: FeedState) {
           html.p([], [html.text(post.body)]),
           html.p([], [html.text("Posted by " <> post.author)]),
         ])
-      }),
+      })
+      |> list.append([
+        html.div([attribute.class("flex justify-center w-full")], [
+          html.button(
+            [event.on_click(app.FeedMsg(msg.LoadMore(state.to, state.to + 10)))],
+            [html.text("Charger plus...")],
+          ),
+        ]),
+      ]),
   )
 }
 
