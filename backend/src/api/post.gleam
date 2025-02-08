@@ -19,14 +19,18 @@ pub type CreatePostRequest {
 }
 
 fn get_session_token(req: glen.Request) {
-  use item <- list.find_map(req.headers)
-  case item {
-    #("cookie", v) -> {
-      io.debug(v)
-      Ok(v)
-    }
-    _other -> Error(False)
-  }
+  let res =
+    list.find_map(req.headers, fn(item) {
+      case item {
+        #("cookie", v) -> {
+          io.debug(v)
+          Ok(v)
+        }
+        _other -> Error(False)
+      }
+    })
+  use _err <- result.map_error(res)
+  "No active session"
 }
 
 fn get_authenticated_user(
@@ -41,9 +45,9 @@ fn get_authenticated_user(
 
           use r <- promise.map(p)
           result.try(r, fn(o) { option.to_result(o, pog.ConnectionUnavailable) })
-          |> result.map_error(fn(e) { "User not found" })
+          |> result.map_error(fn(_e) { "User not found" })
         }
-        Error(x) -> Error("User not found") |> promise.resolve
+        Error(e) -> Error(e) |> promise.resolve
       }
     }
     Error(x) -> Error("User not found") |> promise.resolve

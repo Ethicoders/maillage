@@ -22,8 +22,10 @@ const dictToObject = (dict) => {
 
 const handleResolverResponse = (resolver) => async (one, two, ctx) => {
   console.log(ctx);
-  
-  const result = await resolver(one, two,  {request: glen.convert_request(ctx.request)});
+
+  const result = await resolver(one, two, {
+    request: glen.convert_request(ctx.request),
+  });
 
   if (result instanceof ResultError) {
     return new Error(result[0]);
@@ -50,10 +52,17 @@ export const getHandler = (
         new GraphQLScalarType({
           name: key,
           serialize(value) {
+            console.log("serialize", value);
+            
             return fn(value);
           },
           parseValue(value) {
-            return fn(value);
+            const out = type.value(value);
+            if (out instanceof Ok) {
+              return out["0"];
+            }
+            
+            return out;
           },
           parseLiteral(ast) {
             const out = type.value(ast.value);
@@ -94,12 +103,13 @@ export const getHandler = (
 
 const isDev = () => Deno.env.get("NODE_ENV") === "development";
 
-const applyCORSHeaders = (headers) => {
+const applyCORSHeaders = (headers, origin) => {
   const corsHeaders = {
-    "Access-Control-Allow-Origin": isDev() ? "*" : "TBD",
+    "Access-Control-Allow-Origin": isDev() ? origin : "TBD",
     "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
     "Access-Control-Allow-Credentials": true,
-    "Access-Control-Allow-Headers": "Content-Type, Authorization",
+    "Access-Control-Allow-Headers": "Content-Type, Authorization, Set-Cookie, Priority",
+    "Access-Control-Expose-Headers": "Set-Cookie",
   };
   for (const i in corsHeaders) {
     headers.set(i, corsHeaders[i]);
@@ -114,7 +124,7 @@ export const generateSessionToken = (length = 32) => {
     token += characters.charAt(Math.floor(Math.random() * characters.length));
   }
   return token;
-}
+};
 
 export const serve = (
   typeString,
@@ -134,18 +144,17 @@ export const serve = (
       port: 8000,
     },
     async (request) => {
-      
       const { pathname } = new URL(request.url);
       const clone = request.clone();
 
-      let body;
+          console.log(request);
+          let body;
       try {
         body = await clone.json();
 
         if (isDev() && body.operationName !== "IntrospectionQuery") {
           console.log("Incoming request", body.operationName);
-      console.log(request);
-
+          console.log(request);
         }
       } catch (error) {}
 
@@ -154,7 +163,11 @@ export const serve = (
         // Preflight case
         if (request.method === "OPTIONS") {
           const response = new Response(null);
-          applyCORSHeaders(response.headers);
+          
+          applyCORSHeaders(
+            response.headers,
+            "http://localhost:8080"
+          );
 
           return response;
         }
@@ -162,26 +175,29 @@ export const serve = (
 
         const clone = response.clone();
 
-        const result = await clone.json();
-        if (isDev() && body?.operationName !== "IntrospectionQuery") {
-          console.log("Outgoing response", result);
-        }
+        try {
+          const result = await clone.json();
+          if (isDev() && body?.operationName !== "IntrospectionQuery") {
+            console.log("Outgoing response", result);
+          }
 
-        applyCORSHeaders(response.headers);
-                if ("login" in result?.data) {
-                  response.headers.set(
-                    "Set-Cookie",
-                    `msess=${generateSessionToken(
-                      32
-                    )}; Path=/; HttpOnly; Secure; SameSite=Strict`
-                  );
+          applyCORSHeaders(response.headers, "http://localhost:8080");
+          if ("login" in result?.data) {
+            response.headers.set(
+              "Set-Cookie",
+              `msess=${generateSessionToken(
+                32
+              )}; Path=/; HttpOnly; SameSite=None; Secure=false`
+            );
 
-                  // response.headers.set(
-                  //   "Set-Cookie",
-                  //   "msess=token; HttpOnly; Secure; SameSite=Strict"
-                  // );
-                  console.log(response);
-                }
+            // response.headers.set(
+            //   "Set-Cookie",
+            //   "msess=token; HttpOnly; Secure; SameSite=Strict"
+            // );
+            console.log(response);
+          }
+        } catch (error) {}
+
         return response;
       } else {
         const req = glen.convert_request(request);
