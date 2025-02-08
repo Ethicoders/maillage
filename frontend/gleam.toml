@@ -6,9 +6,6 @@ target = "javascript"
 [javascript]
 typescript_declarations = true
 
-[lustre-dev.start]
-proxy = { from = "/", to = "http://localhost:8080" }
-
 [dependencies]
 gleam_stdlib = ">= 0.34.0 and < 2.0.0"
 gleam_javascript = ">= 0.13.0 and < 1.0.0"

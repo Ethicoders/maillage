@@ -25,7 +25,6 @@ import gleam/json.{type Json, object}
 import gleam/list
 import gleam/option.{type Option, None, Some}
 import gleam/result
-import gleam/string
 import gleam/uri
 import lustre_http.{type HttpError}
 
@@ -37,6 +36,7 @@ pub type Request(t) {
     query: Option(String),
     variables: Option(List(#(String, Json))),
     decoder: Option(Decoder(t)),
+    operation_name: Option(String),
   )
 }
 
@@ -72,6 +72,7 @@ pub fn new() -> Request(t) {
     query: None,
     variables: None,
     decoder: None,
+    operation_name: None,
   )
 }
 
@@ -79,6 +80,12 @@ pub fn new() -> Request(t) {
 ///
 pub fn set_query(req: Request(t), query: String) -> Request(t) {
   Request(..req, query: Some(query))
+}
+
+/// Set the query of the request
+///
+pub fn set_operation_name(req: Request(t), operation_name: String) -> Request(t) {
+  Request(..req, operation_name: Some(operation_name))
 }
 
 /// Set a variable that is needed in the request query
@@ -95,41 +102,6 @@ pub fn set_variable(req: Request(t), key: String, value: Json) -> Request(t) {
   ]
 
   Request(..req, variables: Some(variables))
-}
-
-pub fn blo(req: Request(String)) {
-  let http_request =
-    req.http_request
-    |> request.set_body(
-      json.to_string(
-        object([
-          #(
-            "query",
-            req.query
-              |> option.unwrap("")
-              |> json.string,
-          ),
-          #(
-            "variables",
-            object(
-              req.variables
-              |> option.unwrap(list.new()),
-            ),
-          ),
-        ]),
-      ),
-    )
-
-  fetch.send(http_request)
-  |> promise.try_await(fetch.read_json_body)
-  |> promise.await(fn(resp) {
-    let assert Ok(resp) = resp
-    let assert 200 = resp.status
-    let assert Ok("application/json") =
-      response.get_header(resp, "content-type")
-    // callback(resp)
-    promise.resolve(resp)
-  })
 }
 
 pub fn send(req: Request(String), expect: lustre_http.Expect(a)) {
@@ -150,6 +122,10 @@ pub fn send(req: Request(String), expect: lustre_http.Expect(a)) {
               req.variables
               |> option.unwrap(list.new()),
             ),
+          ),
+          #(
+            "operationName",
+            req.operation_name |> option.unwrap("") |> json.string,
           ),
         ]),
       ),

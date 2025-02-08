@@ -44,7 +44,6 @@ fn init(flags) -> #(Model, Effect(Msg)) {
 
 fn on_route_change(uri: Uri) -> Msg {
   case uri.path_segments(uri.path) {
-    // ["welcome", guest] -> OnRouteChange(WelcomeGuest(guest))
     ["auth"] -> OnChangeView(shared.Auth)
     _ -> OnChangeView(shared.Main)
   }
@@ -63,6 +62,15 @@ fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
             Model(..model, auth_model: auth.Model(action, hello: option.None)),
             effect.none(),
           )
+        }
+        authmsg.LoginResponse(user) -> {
+          io.debug(user)
+          #(Model(..model), effect.none())
+        }
+        authmsg.Authenticate -> {
+          let #(auth_model, ef) = auth.update(model.auth_model, auth_msg)
+
+          #(Model(..model, auth_model:), ef)
         }
         // switch auth action
         // login/register
@@ -87,17 +95,14 @@ fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
 // VIEW ------------------------------------------------------------------------
 
 fn view(model: Model) -> Element(Msg) {
-  let styles = [#("margin", "15vh")]
+  let styles = []
 
   let page = case model.view {
     shared.Auth -> view_auth(model)
     shared.Main -> view_home(model)
-    // Home -> view_home(model)
-    // Auth -> view_auth(model)
-    // WelcomeGuest(name) -> view_welcome(model, name)
   }
 
-  ui.stack([attribute.style(styles)], [view_nav(model), page])
+  html.div([attribute.style(styles)], [view_nav(model), page])
 }
 
 fn view_home(model: Model) {
@@ -121,8 +126,7 @@ fn view_home(model: Model) {
   // }
 
   view_body([
-    view_title("Welcome to the Party 🏡"),
-    html.p([], [element.text("Please sign the guest book:")]),
+    view_title(""),
     ui.input([
       // event.on("keyup", new_guest_input),
     // attribute.value(model.new_guest_name),
@@ -161,12 +165,6 @@ fn view_nav(model: Model) -> Element(a) {
     ])
   }
 
-  // let guest_nav_items =
-  //   model.guests
-  //   |> list.map(fn(guest: Guest) {
-  //     view_nav_item("welcome/" <> guest.slug, guest.name)
-  //   })
-
   cluster.of(html.nav, [], [
     view_nav_item("", "Home"),
     view_nav_item("auth", "Auth"),
@@ -175,7 +173,7 @@ fn view_nav(model: Model) -> Element(a) {
 }
 
 fn view_body(children) {
-  ui.centre([], ui.stack([], children))
+  html.div([], children)
 }
 
 fn view_title(text) {
