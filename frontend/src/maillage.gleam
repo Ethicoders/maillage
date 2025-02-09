@@ -1,24 +1,17 @@
-import gleam/dynamic
 import gleam/io
-import gleam/list
-import gleam/option
-import gleam/result
-import gleam/string
 import gleam/uri.{type Uri}
 import lustre
 import lustre/attribute
 import lustre/effect.{type Effect}
 import lustre/element.{type Element}
 import lustre/element/html
-import lustre/event
-import lustre/ui
 import lustre/ui/cluster
 import model.{type Model, Model}
 import modem
-import shared.{type Msg, AuthMessage, AuthResponse, OnChangeView}
+import shared.{type Msg, AuthMessage, OnChangeView}
 
-import ui/views/auth
-import ui/views/authmsg.{AuthSwitchAction}
+import ui/auth/auth
+import ui/auth/msg as auth_msg
 
 // MAIN ------------------------------------------------------------------------
 
@@ -28,14 +21,6 @@ pub fn main() {
 }
 
 // MODEL -----------------------------------------------------------------------
-
-// type Model {
-//   Model(current_route: Route, guests: List(Guest), new_guest_name: String)
-// }
-
-type Guest {
-  Guest(slug: String, name: String)
-}
 
 fn init(flags) -> #(Model, Effect(Msg)) {
   let #(auth_model, _effect) = auth.init(flags)
@@ -56,39 +41,21 @@ fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
     OnChangeView(route) -> #(Model(..model, view: route), effect.none())
     AuthMessage(auth_msg) -> {
       case auth_msg {
-        AuthSwitchAction(action) -> {
-          io.debug(action)
-          #(
-            Model(..model, auth_model: auth.Model(action, hello: option.None)),
-            effect.none(),
-          )
+        auth_msg.AuthSwitchAction(action) -> {
+          #(Model(..model, auth_model: auth.Model(action)), effect.none())
         }
-        authmsg.LoginResponse(user) -> {
+        auth_msg.LoginResponse(user) -> {
           io.debug(user)
+          // Store the current user data in state
           #(Model(..model), effect.none())
         }
-        authmsg.Authenticate -> {
+        auth_msg.Authenticate -> {
           let #(auth_model, ef) = auth.update(model.auth_model, auth_msg)
 
           #(Model(..model, auth_model:), ef)
         }
-        // switch auth action
-        // login/register
       }
-      // auth.update(#(model.auth_model, effect.none()), message)
-      // #(Model(..model), effect.none())
     }
-    AuthResponse(_) -> todo
-    // UserUpdatedNewGuestName(name) -> #(Model(..model), effect.none())
-    // UserAddedNewGuest(guest) -> #(
-    //   Model(
-    //     ..model,
-    //     // guests: list.append(model.guests, [guest]),
-    //   // new_guest_name: "",
-    //   ),
-    //   effect.none(),
-    // )
-    // Auth -> 
   }
 }
 
@@ -105,58 +72,15 @@ fn view(model: Model) -> Element(Msg) {
   html.div([attribute.style(styles)], [view_nav(model), page])
 }
 
-fn view_home(model: Model) {
-  // let new_guest_input = fn(event) {
-  //   use key_code <- result.try(dynamic.field("key", dynamic.string)(event))
-  //   case key_code {
-  //     "Enter" -> {
-  //       let guest_slug =
-  //         model.new_guest_name
-  //         |> string.replace(" ", "-")
-  //         |> string.lowercase
-  //       Ok(
-  //         UserAddedNewGuest(Guest(name: model.new_guest_name, slug: guest_slug)),
-  //       )
-  //     }
-  //     _ -> {
-  //       use value <- result.try(event.value(event))
-  //       Ok(UserUpdatedNewGuestName(value))
-  //     }
-  //   }
-  // }
-
-  view_body([
-    view_title(""),
-    ui.input([
-      // event.on("keyup", new_guest_input),
-    // attribute.value(model.new_guest_name),
-    ]),
-  ])
+fn view_home(_model: Model) {
+  view_body([view_title("")])
 }
 
 fn view_auth(model: Model) {
   auth.view(model.auth_model)
-  // case auth.main() {
-  //   Ok(_) -> view_body([view_title("Auth 🏡"), lustre.element("auth")])
-  //   Error(_) -> panic as "Failed to create auth app"
-  // }
 }
 
-fn view_welcome(model: Model, slug) -> Element(a) {
-  // let guest =
-  //   model.guests
-  //   |> list.find(fn(guest: Guest) { guest.slug == slug })
-
-  // let title = case guest {
-  //   Ok(guest) -> view_title("Hello, " <> guest.name <> "! 🎉")
-  //   _ -> view_title("Sorry ... didn't quite catch that.")
-  // }
-  let title = view_title("")
-
-  view_body([title])
-}
-
-fn view_nav(model: Model) -> Element(a) {
+fn view_nav(_model: Model) -> Element(a) {
   let item_styles = [#("text-decoration", "underline")]
 
   let view_nav_item = fn(path, text) {
@@ -168,7 +92,6 @@ fn view_nav(model: Model) -> Element(a) {
   cluster.of(html.nav, [], [
     view_nav_item("", "Home"),
     view_nav_item("auth", "Auth"),
-    // ..guest_nav_isstems
   ])
 }
 

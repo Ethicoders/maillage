@@ -1,9 +1,8 @@
-import ui/views/authmsg
+import ui/auth/msg as auth_msg
 
 pub type Msg {
   OnChangeView(view: View)
-  AuthMessage(authmsg.Msg)
-  AuthResponse(String)
+  AuthMessage(auth_msg.Msg)
 }
 
 pub type View {

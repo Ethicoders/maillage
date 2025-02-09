@@ -306,6 +306,29 @@ function unwrap(option, default$) {
   }
 }
 
+// build/dev/javascript/gleam_stdlib/gleam/result.mjs
+function map_error(result, fun) {
+  if (result.isOk()) {
+    let x = result[0];
+    return new Ok(x);
+  } else {
+    let error = result[0];
+    return new Error(fun(error));
+  }
+}
+function try$(result, fun) {
+  if (result.isOk()) {
+    let x = result[0];
+    return fun(x);
+  } else {
+    let e = result[0];
+    return new Error(e);
+  }
+}
+function then$(result, fun) {
+  return try$(result, fun);
+}
+
 // build/dev/javascript/gleam_stdlib/dict.mjs
 var referenceMap = /* @__PURE__ */ new WeakMap();
 var tempDataView = new DataView(new ArrayBuffer(8));
@@ -1357,7 +1380,7 @@ function append_loop(loop$first, loop$second) {
     }
   }
 }
-function append(first2, second) {
+function append2(first2, second) {
   return append_loop(reverse(first2), second);
 }
 function fold(loop$list, loop$initial, loop$fun) {
@@ -1449,29 +1472,6 @@ function split2(x, substring) {
 function inspect2(term) {
   let _pipe = inspect(term);
   return identity(_pipe);
-}
-
-// build/dev/javascript/gleam_stdlib/gleam/result.mjs
-function map_error(result, fun) {
-  if (result.isOk()) {
-    let x = result[0];
-    return new Ok(x);
-  } else {
-    let error = result[0];
-    return new Error(fun(error));
-  }
-}
-function try$(result, fun) {
-  if (result.isOk()) {
-    let x = result[0];
-    return fun(x);
-  } else {
-    let e = result[0];
-    return new Error(e);
-  }
-}
-function then$(result, fun) {
-  return try$(result, fun);
 }
 
 // build/dev/javascript/gleam_stdlib/gleam/io.mjs
@@ -2237,13 +2237,13 @@ function parse(uri_string) {
 }
 function remove_dot_segments_loop(loop$input, loop$accumulator) {
   while (true) {
-    let input4 = loop$input;
+    let input2 = loop$input;
     let accumulator = loop$accumulator;
-    if (input4.hasLength(0)) {
+    if (input2.hasLength(0)) {
       return reverse(accumulator);
     } else {
-      let segment = input4.head;
-      let rest = input4.tail;
+      let segment = input2.head;
+      let rest = input2.tail;
       let accumulator$1 = (() => {
         if (segment === "") {
           let accumulator$12 = accumulator;
@@ -2267,8 +2267,8 @@ function remove_dot_segments_loop(loop$input, loop$accumulator) {
     }
   }
 }
-function remove_dot_segments(input4) {
-  return remove_dot_segments_loop(input4, toList([]));
+function remove_dot_segments(input2) {
+  return remove_dot_segments_loop(input2, toList([]));
 }
 function path_segments(path) {
   return remove_dot_segments(split2(path, "/"));
@@ -2522,7 +2522,7 @@ function push_path(layer, path) {
       return new DecodeError2(
         _record.expected,
         _record.found,
-        append(path$1, error.path)
+        append2(path$1, error.path)
       );
     }
   );
@@ -2587,7 +2587,7 @@ function subfield(field_path, field_decoder, next) {
       let $1 = next(out).function(data);
       let out$1 = $1[0];
       let errors2 = $1[1];
-      return [out$1, append(errors1, errors2)];
+      return [out$1, append2(errors1, errors2)];
     }
   );
 }
@@ -2727,8 +2727,8 @@ function decode2(json, decoder) {
 function to_string3(json) {
   return json_to_string(json);
 }
-function string3(input4) {
-  return identity2(input4);
+function string3(input2) {
+  return identity2(input2);
 }
 function object2(entries) {
   return object(entries);
@@ -2799,11 +2799,11 @@ var Text = class extends CustomType {
   }
 };
 var Element = class extends CustomType {
-  constructor(key, namespace, tag2, attrs, children2, self_closing, void$) {
+  constructor(key, namespace, tag, attrs, children2, self_closing, void$) {
     super();
     this.key = key;
     this.namespace = namespace;
-    this.tag = tag2;
+    this.tag = tag;
     this.attrs = attrs;
     this.children = children2;
     this.self_closing = self_closing;
@@ -2923,37 +2923,37 @@ function src(uri) {
 }
 
 // build/dev/javascript/lustre/lustre/element.mjs
-function element(tag2, attrs, children2) {
-  if (tag2 === "area") {
-    return new Element("", "", tag2, attrs, toList([]), false, true);
-  } else if (tag2 === "base") {
-    return new Element("", "", tag2, attrs, toList([]), false, true);
-  } else if (tag2 === "br") {
-    return new Element("", "", tag2, attrs, toList([]), false, true);
-  } else if (tag2 === "col") {
-    return new Element("", "", tag2, attrs, toList([]), false, true);
-  } else if (tag2 === "embed") {
-    return new Element("", "", tag2, attrs, toList([]), false, true);
-  } else if (tag2 === "hr") {
-    return new Element("", "", tag2, attrs, toList([]), false, true);
-  } else if (tag2 === "img") {
-    return new Element("", "", tag2, attrs, toList([]), false, true);
-  } else if (tag2 === "input") {
-    return new Element("", "", tag2, attrs, toList([]), false, true);
-  } else if (tag2 === "link") {
-    return new Element("", "", tag2, attrs, toList([]), false, true);
-  } else if (tag2 === "meta") {
-    return new Element("", "", tag2, attrs, toList([]), false, true);
-  } else if (tag2 === "param") {
-    return new Element("", "", tag2, attrs, toList([]), false, true);
-  } else if (tag2 === "source") {
-    return new Element("", "", tag2, attrs, toList([]), false, true);
-  } else if (tag2 === "track") {
-    return new Element("", "", tag2, attrs, toList([]), false, true);
-  } else if (tag2 === "wbr") {
-    return new Element("", "", tag2, attrs, toList([]), false, true);
+function element(tag, attrs, children2) {
+  if (tag === "area") {
+    return new Element("", "", tag, attrs, toList([]), false, true);
+  } else if (tag === "base") {
+    return new Element("", "", tag, attrs, toList([]), false, true);
+  } else if (tag === "br") {
+    return new Element("", "", tag, attrs, toList([]), false, true);
+  } else if (tag === "col") {
+    return new Element("", "", tag, attrs, toList([]), false, true);
+  } else if (tag === "embed") {
+    return new Element("", "", tag, attrs, toList([]), false, true);
+  } else if (tag === "hr") {
+    return new Element("", "", tag, attrs, toList([]), false, true);
+  } else if (tag === "img") {
+    return new Element("", "", tag, attrs, toList([]), false, true);
+  } else if (tag === "input") {
+    return new Element("", "", tag, attrs, toList([]), false, true);
+  } else if (tag === "link") {
+    return new Element("", "", tag, attrs, toList([]), false, true);
+  } else if (tag === "meta") {
+    return new Element("", "", tag, attrs, toList([]), false, true);
+  } else if (tag === "param") {
+    return new Element("", "", tag, attrs, toList([]), false, true);
+  } else if (tag === "source") {
+    return new Element("", "", tag, attrs, toList([]), false, true);
+  } else if (tag === "track") {
+    return new Element("", "", tag, attrs, toList([]), false, true);
+  } else if (tag === "wbr") {
+    return new Element("", "", tag, attrs, toList([]), false, true);
   } else {
-    return new Element("", "", tag2, attrs, children2, false, false);
+    return new Element("", "", tag, attrs, children2, false, false);
   }
 }
 function text(content) {
@@ -3074,9 +3074,9 @@ if (globalThis.customElements && !globalThis.customElements.get("lustre-fragment
 }
 function morph(prev, next, dispatch) {
   let out;
-  let stack2 = [{ prev, next, parent: prev.parentNode }];
-  while (stack2.length) {
-    let { prev: prev2, next: next2, parent } = stack2.pop();
+  let stack = [{ prev, next, parent: prev.parentNode }];
+  while (stack.length) {
+    let { prev: prev2, next: next2, parent } = stack.pop();
     while (next2.subtree !== void 0)
       next2 = next2.subtree();
     if (next2.content !== void 0) {
@@ -3098,7 +3098,7 @@ function morph(prev, next, dispatch) {
         prev: prev2,
         next: next2,
         dispatch,
-        stack: stack2
+        stack
       });
       if (!prev2) {
         parent.appendChild(created);
@@ -3110,7 +3110,7 @@ function morph(prev, next, dispatch) {
   }
   return out;
 }
-function createElementNode({ prev, next, dispatch, stack: stack2 }) {
+function createElementNode({ prev, next, dispatch, stack }) {
   const namespace = next.namespace || "http://www.w3.org/1999/xhtml";
   const canMorph = prev && prev.nodeType === Node.ELEMENT_NODE && prev.localName === next.tag && prev.namespaceURI === (next.namespace || "http://www.w3.org/1999/xhtml");
   const el = canMorph ? prev : namespace ? document.createElementNS(namespace, next.tag) : document.createElement(next.tag);
@@ -3232,7 +3232,7 @@ function createElementNode({ prev, next, dispatch, stack: stack2 }) {
         prevChild,
         child,
         el,
-        stack2,
+        stack,
         incomingKeyedChildren,
         keyedChildren,
         seenKeys
@@ -3240,7 +3240,7 @@ function createElementNode({ prev, next, dispatch, stack: stack2 }) {
     }
   } else {
     for (const child of children(next)) {
-      stack2.unshift({ prev: prevChild, next: child, parent: el });
+      stack.unshift({ prev: prevChild, next: child, parent: el });
       prevChild = prevChild?.nextSibling;
     }
   }
@@ -3267,7 +3267,7 @@ function lustreGenericEventHandler(event2) {
 }
 function lustreServerEventHandler(event2) {
   const el = event2.currentTarget;
-  const tag2 = el.getAttribute(`data-lustre-on-${event2.type}`);
+  const tag = el.getAttribute(`data-lustre-on-${event2.type}`);
   const data = JSON.parse(el.getAttribute("data-lustre-data") || "{}");
   const include = JSON.parse(el.getAttribute("data-lustre-include") || "[]");
   switch (event2.type) {
@@ -3277,7 +3277,7 @@ function lustreServerEventHandler(event2) {
       break;
   }
   return {
-    tag: tag2,
+    tag,
     data: include.reduce(
       (data2, property) => {
         const path = property.split(".");
@@ -3307,41 +3307,41 @@ function getKeyedChildren(el) {
   }
   return keyedChildren;
 }
-function diffKeyedChild(prevChild, child, el, stack2, incomingKeyedChildren, keyedChildren, seenKeys) {
+function diffKeyedChild(prevChild, child, el, stack, incomingKeyedChildren, keyedChildren, seenKeys) {
   while (prevChild && !incomingKeyedChildren.has(prevChild.getAttribute("data-lustre-key"))) {
     const nextChild = prevChild.nextSibling;
     el.removeChild(prevChild);
     prevChild = nextChild;
   }
   if (keyedChildren.size === 0) {
-    stack2.unshift({ prev: prevChild, next: child, parent: el });
+    stack.unshift({ prev: prevChild, next: child, parent: el });
     prevChild = prevChild?.nextSibling;
     return prevChild;
   }
   if (seenKeys.has(child.key)) {
     console.warn(`Duplicate key found in Lustre vnode: ${child.key}`);
-    stack2.unshift({ prev: null, next: child, parent: el });
+    stack.unshift({ prev: null, next: child, parent: el });
     return prevChild;
   }
   seenKeys.add(child.key);
   const keyedChild = keyedChildren.get(child.key);
   if (!keyedChild && !prevChild) {
-    stack2.unshift({ prev: null, next: child, parent: el });
+    stack.unshift({ prev: null, next: child, parent: el });
     return prevChild;
   }
   if (!keyedChild && prevChild !== null) {
     const placeholder = document.createTextNode("");
     el.insertBefore(placeholder, prevChild);
-    stack2.unshift({ prev: placeholder, next: child, parent: el });
+    stack.unshift({ prev: placeholder, next: child, parent: el });
     return prevChild;
   }
   if (!keyedChild || keyedChild === prevChild) {
-    stack2.unshift({ prev: prevChild, next: child, parent: el });
+    stack.unshift({ prev: prevChild, next: child, parent: el });
     prevChild = prevChild?.nextSibling;
     return prevChild;
   }
   el.insertBefore(keyedChild, prevChild);
-  stack2.unshift({ prev: keyedChild, next: child, parent: el });
+  stack.unshift({ prev: keyedChild, next: child, parent: el });
   return prevChild;
 }
 function* children(element2) {
@@ -3681,16 +3681,6 @@ function label(attrs, children2) {
   return element("label", attrs, children2);
 }
 
-// build/dev/javascript/lustre/lustre/event.mjs
-function on2(name, handler) {
-  return on(name, handler);
-}
-function on_click(msg) {
-  return on2("click", (_) => {
-    return new Ok(msg);
-  });
-}
-
 // build/dev/javascript/lustre_ui/lustre/ui/cluster.mjs
 function of(element2, attributes, children2) {
   return element2(
@@ -3698,16 +3688,6 @@ function of(element2, attributes, children2) {
     children2
   );
 }
-
-// build/dev/javascript/lustre_ui/lustre/ui/input.mjs
-function input2(attributes) {
-  return input(
-    prepend(class$("lustre-ui-input"), attributes)
-  );
-}
-
-// build/dev/javascript/lustre_ui/lustre/ui.mjs
-var input3 = input2;
 
 // build/dev/javascript/modem/modem.ffi.mjs
 var defaults = {
@@ -3820,13 +3800,11 @@ var User = class extends CustomType {
   }
 };
 
-// build/dev/javascript/maillage/ui/views/authaction.mjs
+// build/dev/javascript/maillage/ui/auth/msg.mjs
 var ActionLogin = class extends CustomType {
 };
 var ActionRegister = class extends CustomType {
 };
-
-// build/dev/javascript/maillage/ui/views/authmsg.mjs
 var AuthSwitchAction = class extends CustomType {
   constructor(x0) {
     super();
@@ -3859,6 +3837,16 @@ var Main = class extends CustomType {
 };
 var Auth = class extends CustomType {
 };
+
+// build/dev/javascript/lustre/lustre/event.mjs
+function on2(name, handler) {
+  return on(name, handler);
+}
+function on_click(msg) {
+  return on2("click", (_) => {
+    return new Ok(msg);
+  });
+}
 
 // build/dev/javascript/gleam_http/gleam/http.mjs
 var Get = class extends CustomType {
@@ -4114,7 +4102,6 @@ function to_fetch_request(request) {
   let method = method_to_string(request.method).toUpperCase();
   let options = {
     headers: make_headers(request.headers),
-    credentials: "include",
     method
   };
   if (method !== "GET" && method !== "HEAD")
@@ -4423,16 +4410,15 @@ function set_header3(req, key, value2) {
   );
 }
 
-// build/dev/javascript/maillage/ui/views/auth.mjs
+// build/dev/javascript/maillage/ui/auth/auth.mjs
 var Model2 = class extends CustomType {
-  constructor(hello, action) {
+  constructor(action) {
     super();
-    this.hello = hello;
     this.action = action;
   }
 };
 function init3(_) {
-  return [new Model2(new None(), new ActionLogin()), none()];
+  return [new Model2(new ActionLogin()), none()];
 }
 function feature(icon_name, title, description) {
   return div(
@@ -4583,15 +4569,11 @@ function sign_up_card_with_value_props(model) {
                       let $ = model.action;
                       if ($ instanceof ActionLogin) {
                         return new AuthMessage(
-                          new AuthSwitchAction(
-                            new ActionRegister()
-                          )
+                          new AuthSwitchAction(new ActionRegister())
                         );
                       } else {
                         return new AuthMessage(
-                          new AuthSwitchAction(
-                            new ActionLogin()
-                          )
+                          new AuthSwitchAction(new ActionLogin())
                         );
                       }
                     })()
@@ -4779,8 +4761,8 @@ function update(model, msg) {
   if (msg instanceof AuthSwitchAction) {
     throw makeError(
       "todo",
-      "ui/views/auth",
-      160,
+      "ui/auth/auth",
+      149,
       "update",
       "`todo` expression evaluated. This code has not yet been implemented.",
       {}
@@ -4803,12 +4785,11 @@ function update(model, msg) {
             return new AuthMessage(new LoginResponse(usr));
           } else {
             let err = res[0];
-            debug("Hi mum");
             debug(err);
             throw makeError(
               "panic",
-              "ui/views/auth",
-              175,
+              "ui/auth/auth",
+              163,
               "",
               "`panic` expression evaluated.",
               {}
@@ -4820,8 +4801,8 @@ function update(model, msg) {
   } else {
     throw makeError(
       "todo",
-      "ui/views/auth",
-      182,
+      "ui/auth/auth",
+      170,
       "update",
       "`todo` expression evaluated. This code has not yet been implemented.",
       {}
@@ -4865,18 +4846,14 @@ function update2(model, msg) {
       })(),
       none()
     ];
-  } else if (msg instanceof AuthMessage) {
+  } else {
     let auth_msg = msg[0];
     if (auth_msg instanceof AuthSwitchAction) {
       let action = auth_msg[0];
-      debug(action);
       return [
         (() => {
           let _record = model;
-          return new Model3(
-            _record.view,
-            new Model2(new None(), action)
-          );
+          return new Model3(_record.view, new Model2(action));
         })(),
         none()
       ];
@@ -4902,21 +4879,12 @@ function update2(model, msg) {
         ef
       ];
     }
-  } else {
-    throw makeError(
-      "todo",
-      "maillage",
-      81,
-      "update",
-      "`todo` expression evaluated. This code has not yet been implemented.",
-      {}
-    );
   }
 }
 function view_auth(model) {
   return view(model.auth_model);
 }
-function view_nav(model) {
+function view_nav(_) {
   let item_styles = toList([["text-decoration", "underline"]]);
   let view_nav_item = (path, text3) => {
     return a(
@@ -4936,8 +4904,8 @@ function view_body(children2) {
 function view_title(text3) {
   return h1(toList([]), toList([text(text3)]));
 }
-function view_home(model) {
-  return view_body(toList([view_title(""), input3(toList([]))]));
+function view_home(_) {
+  return view_body(toList([view_title("")]));
 }
 function view2(model) {
   let styles = toList([]);
@@ -4961,7 +4929,7 @@ function main() {
     throw makeError(
       "let_assert",
       "maillage",
-      27,
+      20,
       "main",
       "Pattern match failed, no pattern matched the value.",
       { value: $ }
