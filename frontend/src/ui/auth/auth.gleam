@@ -9,14 +9,19 @@ import gleamql
 import lustre/attribute
 import lustre/effect.{type Effect}
 import lustre/element/html
-import lustre/event
 import lustre_http
+import modem
+import plinth/javascript/storage
 import shared
 import ui/auth/msg.{
   type Action, type Msg, ActionLogin, ActionRegister, AuthSwitchAction,
   Authenticate, LoginResponse,
 }
-import ui/auth/others
+import ui/components/button
+import ui/components/field.{form_field}
+import ui/components/input
+import ui/components/link
+import varasto
 
 pub type Data {
   LoginRequest(name: String)
@@ -25,8 +30,11 @@ pub type Data {
 
 const query_login = "mutation Login($email: Email!, $password: Password!) {
   login(request: {email: $email, password: $password}) {
-    name
-    slug
+    user {
+      name
+      slug
+    }
+    sessionToken
   }
 }"
 
@@ -55,8 +63,14 @@ fn login() {
     decode.success(user.User(id: 0, name:, slug:, email: ""))
   }
 
+  let auth_decoder = {
+    use user <- decode.field("user", user_decoder)
+    use session_token <- decode.field("sessionToken", decode.string)
+    decode.success(user.AuthenticatedUser(user:, session_token:))
+  }
+
   let login_decoder = {
-    use user <- decode.field("login", user_decoder)
+    use user <- decode.field("login", auth_decoder)
     decode.success(user)
   }
 
@@ -86,6 +100,28 @@ fn login() {
   )
 }
 
+pub fn get_storage() {
+  let assert Ok(local) = storage.local()
+  let reader = fn() {
+    fn(item) {
+      decode.run(item, decode.string) |> result.map_error(fn(_e) { [] })
+    }
+  }
+
+  let writer = fn() { fn(val: String) { json.string(val) } }
+  varasto.new(local, reader(), writer())
+}
+
+pub fn set_token(session_token: String) {
+  let s = get_storage()
+  varasto.set(s, "token", session_token)
+}
+
+pub fn get_token() {
+  let s = get_storage()
+  varasto.get(s, "token")
+}
+
 fn register() {
   let res =
     gleamql.new()
@@ -105,8 +141,14 @@ fn register() {
     decode.success(user.User(id:, name:, slug:, email:))
   }
 
+  let auth_decoder = {
+    use user <- decode.field("user", user_decoder)
+    use session_token <- decode.field("sessionToken", decode.string)
+    decode.success(user.AuthenticatedUser(user:, session_token:))
+  }
+
   let login_decoder = {
-    use user <- decode.field("register", user_decoder)
+    use user <- decode.field("register", auth_decoder)
     decode.success(user)
   }
 
@@ -137,16 +179,18 @@ fn register() {
 }
 
 pub type Model {
-  Model(action: Action)
+  Model(action: Action, current_user: Option(user.User))
 }
 
 pub fn init(_flags) -> #(Model, Effect(Msg)) {
-  #(Model(action: ActionLogin), effect.none())
+  #(Model(action: ActionLogin, current_user: None), effect.none())
 }
 
 pub fn update(model: Model, msg: Msg) -> #(Model, Effect(shared.Msg)) {
   case msg {
-    AuthSwitchAction(_) -> todo
+    AuthSwitchAction(action) -> {
+      #(Model(..model, action:), effect.none())
+    }
     Authenticate -> {
       #(
         model,
@@ -167,7 +211,15 @@ pub fn update(model: Model, msg: Msg) -> #(Model, Effect(shared.Msg)) {
         ),
       )
     }
-    LoginResponse(_) -> todo
+    LoginResponse(current_user) -> {
+      let assert Ok(_) =
+        set_token(current_user.session_token)
+        |> result.map_error(fn(_) { panic as "Failed writing to storage!" })
+      #(
+        Model(..model, current_user: Some(current_user.user)),
+        modem.replace("/", None, None),
+      )
+    }
   }
 }
 
@@ -175,23 +227,22 @@ pub fn sign_up_card_with_value_props(model: Model) {
   html.div(
     [
       attribute.class(
-        "flex h-full w-full flex-wrap items-center justify-center gap-12 bg-default-background px-12 py-12 mobile:flex-col mobile:flex-wrap mobile:gap-12 mobile:px-6 mobile:py-12",
+        "flex h-full w-full flex-wrap items-center justify-center gap-12 px-12 py-12 mobile:flex-col mobile:flex-wrap mobile:gap-12 mobile:px-6 mobile:py-12",
       ),
     ],
     [
       html.div(
         [
           attribute.class(
-            "max-w-[576px] grow shrink-0 basis-0 flex-col items-center justify-center gap-12 self-stretch mobile:h-auto mobile:w-full mobile:max-w-[576px] mobile:flex-none",
+            "flex max-w-[576px] grow shrink-0 basis-0 flex-col items-center justify-center gap-12 self-stretch mobile:h-auto mobile:w-full mobile:max-w-[576px]",
           ),
         ],
         [
           html.img([
-            attribute.src(
-              "https://res.cloudinary.com/subframe/image/upload/v1711417518/shared/fdb8rlpzh1gds6vzsnt0.svg",
-            ),
-            attribute.class("h-8 flex-none object-cover"),
+            attribute.src("/static/m.svg"),
+            attribute.class("h-16 flex-none object-cover"),
           ]),
+          //   logo.view([attribute.class("h-8 flex-none object-cover")], None, None),
           html.div(
             [
               attribute.class(
@@ -225,69 +276,79 @@ pub fn sign_up_card_with_value_props(model: Model) {
           ),
         ],
         [
-          html.span(
+          html.div(
             [
               attribute.class(
-                "w-full text-heading-3 font-heading-3 text-default-font",
+                "flex w-full flex-col items-center justify-center gap-8",
               ),
             ],
-            [html.text("Create your account")],
-          ),
-          form_field("Name ", ""),
-          form_field("Email ", ""),
-          form_field("Password ", ""),
-          html.button(
             [
-              event.on_click(
-                shared.AuthMessage(case model.action {
-                  ActionLogin -> Authenticate
-                  ActionRegister -> Authenticate
-                }),
+              html.span(
+                [
+                  attribute.class(
+                    "w-full text-heading-3 font-heading-3 text-default-font font-bold",
+                  ),
+                ],
+                [
+                  html.text(case model.action {
+                    ActionLogin -> "Log into your account"
+                    ActionRegister -> "Create your account"
+                  }),
+                ],
               ),
+              form_fields(model),
+              button.primary(
+                case model.action {
+                  ActionLogin -> "Sign In"
+                  ActionRegister -> "Sign Up"
+                },
+                shared.AuthMessage(Authenticate),
+              )
+                |> button.render(),
+              html.div([attribute.class("flex flex-wrap items-start gap-1")], [
+                html.span(
+                  [attribute.class("text-body font-body text-default-font")],
+                  [
+                    html.text(case model.action {
+                      ActionLogin -> "No account yet?"
+                      ActionRegister -> "Have an account?"
+                    }),
+                  ],
+                ),
+                link.view(
+                  "",
+                  case model.action {
+                    ActionLogin -> "Sign Up"
+                    ActionRegister -> "Sign In"
+                  },
+                  case model.action {
+                    ActionLogin ->
+                      shared.AuthMessage(AuthSwitchAction(ActionRegister))
+                    ActionRegister ->
+                      shared.AuthMessage(AuthSwitchAction(ActionLogin))
+                  },
+                ),
+              ]),
             ],
-            [html.text("Create account")],
           ),
-          html.div([attribute.class("flex flex-wrap items-start gap-1")], [
-            html.span(
-              [attribute.class("text-body font-body text-default-font")],
-              [
-                html.text(case model.action {
-                  ActionLogin -> "No account yet?"
-                  ActionRegister -> "Have an account?"
-                }),
-              ],
-            ),
-            html.a(
-              [
-                event.on_click(case model.action {
-                  ActionLogin ->
-                    shared.AuthMessage(AuthSwitchAction(ActionRegister))
-                  ActionRegister ->
-                    shared.AuthMessage(AuthSwitchAction(ActionLogin))
-                }),
-              ],
-              [
-                html.text(case model.action {
-                  ActionLogin -> "Sign Up"
-                  ActionRegister -> "Sign In"
-                }),
-              ],
-            ),
-          ]),
         ],
       ),
     ],
   )
 }
 
-fn feature(icon_name: String, title: String, description: String) {
+fn feature(_icon_name: String, title: String, description: String) {
   html.div(
-    [attribute.class("flex items-start justify-center gap-4 px-2 py-2")],
+    [attribute.class("flex w-full items-start justify-center gap-4 px-2 py-2")],
     [
       // icon.render(icon_name, [attribute.class("text-heading-2 font-heading-2 text-brand-700")]),
       html.div([attribute.class("flex flex-col items-start gap-1")], [
         html.span(
-          [attribute.class("text-heading-3 font-heading-3 text-brand-700")],
+          [
+            attribute.class(
+              "text-heading-3 font-heading-3 text-brand-700 font-bold",
+            ),
+          ],
           [html.text(title)],
         ),
         html.span([attribute.class("text-body font-body text-subtext-color")], [
@@ -298,13 +359,24 @@ fn feature(icon_name: String, title: String, description: String) {
   )
 }
 
-fn form_field(label: String, value: String) {
-  html.div([attribute.class("h-auto w-full flex-none")], [
-    html.div([], [
-      html.label([], [html.text(label)]),
-      html.input([attribute.value(value)]),
-    ]),
-  ])
+fn form_fields(model: Model) {
+  html.div(
+    [attribute.class("flex w-full flex-col items-start justify-center gap-6")],
+    [
+      form_field(
+        "Name ",
+        input.new("", shared.Noop)
+          |> input.with_type(input.Text)
+          |> input.with_validation(input.Unset),
+      ),
+      case model.action {
+        ActionLogin -> html.div([], [])
+        ActionRegister ->
+          form_field("Email ", input.email_input("", shared.Noop))
+      },
+      form_field("Password ", input.password_input("", shared.Noop)),
+    ],
+  )
 }
 
 pub fn view(model: Model) {

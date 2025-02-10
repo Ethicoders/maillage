@@ -57,6 +57,7 @@ pub fn render(input: Input(Type, Validation, a)) -> element.Element(a) {
   }
 
   html.input([
+    attribute.class("bg-transparent w-full h-full text-default-font"),
     attribute.type_(type_attr),
     attribute.placeholder(input.placeholder),
     attribute.value(input.value),

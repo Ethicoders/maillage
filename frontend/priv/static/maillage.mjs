@@ -2,7 +2,7 @@
 var CustomType = class {
   withFields(fields) {
     let properties = Object.keys(this).map(
-      (label2) => label2 in fields ? fields[label2] : this[label2]
+      (label) => label in fields ? fields[label] : this[label]
     );
     return new this.constructor(...properties);
   }
@@ -41,10 +41,10 @@ var List = class {
   }
   // @internal
   countLength() {
-    let length4 = 0;
+    let length5 = 0;
     for (let _ of this)
-      length4++;
-    return length4;
+      length5++;
+    return length5;
   }
 };
 function prepend(element2, tail) {
@@ -165,12 +165,12 @@ function byteArrayToInt(byteArray, start3, end, isBigEndian, isSigned) {
   }
 }
 function byteArrayToFloat(byteArray, start3, end, isBigEndian) {
-  const view3 = new DataView(byteArray.buffer);
+  const view4 = new DataView(byteArray.buffer);
   const byteSize = end - start3;
   if (byteSize === 8) {
-    return view3.getFloat64(start3, !isBigEndian);
+    return view4.getFloat64(start3, !isBigEndian);
   } else if (byteSize === 4) {
-    return view3.getFloat32(start3, !isBigEndian);
+    return view4.getFloat32(start3, !isBigEndian);
   } else {
     const msg = `Sized floats must be 32-bit or 64-bit on JavaScript, got size of ${byteSize * 8} bits`;
     throw new globalThis.Error(msg);
@@ -224,9 +224,9 @@ function isEqual(x, y) {
       } catch {
       }
     }
-    let [keys2, get] = getters(a2);
+    let [keys2, get2] = getters(a2);
     for (let k of keys2(a2)) {
-      values2.push(get(a2, k), get(b, k));
+      values2.push(get2(a2, k), get2(b, k));
     }
   }
   return true;
@@ -306,6 +306,179 @@ function unwrap(option, default$) {
   }
 }
 
+// build/dev/javascript/gleam_stdlib/gleam/dict.mjs
+function insert(dict2, key2, value2) {
+  return map_insert(key2, value2, dict2);
+}
+function reverse_and_concat(loop$remaining, loop$accumulator) {
+  while (true) {
+    let remaining = loop$remaining;
+    let accumulator = loop$accumulator;
+    if (remaining.hasLength(0)) {
+      return accumulator;
+    } else {
+      let item = remaining.head;
+      let rest = remaining.tail;
+      loop$remaining = rest;
+      loop$accumulator = prepend(item, accumulator);
+    }
+  }
+}
+function do_keys_loop(loop$list, loop$acc) {
+  while (true) {
+    let list2 = loop$list;
+    let acc = loop$acc;
+    if (list2.hasLength(0)) {
+      return reverse_and_concat(acc, toList([]));
+    } else {
+      let first2 = list2.head;
+      let rest = list2.tail;
+      loop$list = rest;
+      loop$acc = prepend(first2[0], acc);
+    }
+  }
+}
+function keys(dict2) {
+  let list_of_pairs = map_to_list(dict2);
+  return do_keys_loop(list_of_pairs, toList([]));
+}
+
+// build/dev/javascript/gleam_stdlib/gleam/list.mjs
+function reverse_loop(loop$remaining, loop$accumulator) {
+  while (true) {
+    let remaining = loop$remaining;
+    let accumulator = loop$accumulator;
+    if (remaining.hasLength(0)) {
+      return accumulator;
+    } else {
+      let item = remaining.head;
+      let rest$1 = remaining.tail;
+      loop$remaining = rest$1;
+      loop$accumulator = prepend(item, accumulator);
+    }
+  }
+}
+function reverse(list2) {
+  return reverse_loop(list2, toList([]));
+}
+function filter_map_loop(loop$list, loop$fun, loop$acc) {
+  while (true) {
+    let list2 = loop$list;
+    let fun = loop$fun;
+    let acc = loop$acc;
+    if (list2.hasLength(0)) {
+      return reverse(acc);
+    } else {
+      let first$1 = list2.head;
+      let rest$1 = list2.tail;
+      let new_acc = (() => {
+        let $ = fun(first$1);
+        if ($.isOk()) {
+          let first$2 = $[0];
+          return prepend(first$2, acc);
+        } else {
+          return acc;
+        }
+      })();
+      loop$list = rest$1;
+      loop$fun = fun;
+      loop$acc = new_acc;
+    }
+  }
+}
+function filter_map(list2, fun) {
+  return filter_map_loop(list2, fun, toList([]));
+}
+function map_loop(loop$list, loop$fun, loop$acc) {
+  while (true) {
+    let list2 = loop$list;
+    let fun = loop$fun;
+    let acc = loop$acc;
+    if (list2.hasLength(0)) {
+      return reverse(acc);
+    } else {
+      let first$1 = list2.head;
+      let rest$1 = list2.tail;
+      loop$list = rest$1;
+      loop$fun = fun;
+      loop$acc = prepend(fun(first$1), acc);
+    }
+  }
+}
+function map(list2, fun) {
+  return map_loop(list2, fun, toList([]));
+}
+function new$() {
+  return toList([]);
+}
+function append_loop(loop$first, loop$second) {
+  while (true) {
+    let first2 = loop$first;
+    let second = loop$second;
+    if (first2.hasLength(0)) {
+      return second;
+    } else {
+      let item = first2.head;
+      let rest$1 = first2.tail;
+      loop$first = rest$1;
+      loop$second = prepend(item, second);
+    }
+  }
+}
+function append(first2, second) {
+  return append_loop(reverse(first2), second);
+}
+function fold(loop$list, loop$initial, loop$fun) {
+  while (true) {
+    let list2 = loop$list;
+    let initial = loop$initial;
+    let fun = loop$fun;
+    if (list2.hasLength(0)) {
+      return initial;
+    } else {
+      let x = list2.head;
+      let rest$1 = list2.tail;
+      loop$list = rest$1;
+      loop$initial = fun(initial, x);
+      loop$fun = fun;
+    }
+  }
+}
+function index_fold_loop(loop$over, loop$acc, loop$with, loop$index) {
+  while (true) {
+    let over = loop$over;
+    let acc = loop$acc;
+    let with$ = loop$with;
+    let index5 = loop$index;
+    if (over.hasLength(0)) {
+      return acc;
+    } else {
+      let first$1 = over.head;
+      let rest$1 = over.tail;
+      loop$over = rest$1;
+      loop$acc = with$(acc, first$1, index5);
+      loop$with = with$;
+      loop$index = index5 + 1;
+    }
+  }
+}
+function index_fold(list2, initial, fun) {
+  return index_fold_loop(list2, initial, fun, 0);
+}
+function key_set(list2, key2, value2) {
+  if (list2.hasLength(0)) {
+    return toList([[key2, value2]]);
+  } else if (list2.atLeastLength(1) && isEqual(list2.head[0], key2)) {
+    let k = list2.head[0];
+    let rest$1 = list2.tail;
+    return prepend([key2, value2], rest$1);
+  } else {
+    let first$1 = list2.head;
+    let rest$1 = list2.tail;
+    return prepend(first$1, key_set(rest$1, key2, value2));
+  }
+}
+
 // build/dev/javascript/gleam_stdlib/gleam/result.mjs
 function map_error(result, fun) {
   if (result.isOk()) {
@@ -327,6 +500,14 @@ function try$(result, fun) {
 }
 function then$(result, fun) {
   return try$(result, fun);
+}
+function replace_error(result, error) {
+  if (result.isOk()) {
+    let x = result[0];
+    return new Ok(x);
+  } else {
+    return new Error(error);
+  }
 }
 
 // build/dev/javascript/gleam_stdlib/dict.mjs
@@ -524,17 +705,17 @@ function createNode(shift, key1, val1, key2hash, key2, val2) {
     addedLeaf
   );
 }
-function assoc(root, shift, hash, key, val, addedLeaf) {
+function assoc(root, shift, hash, key2, val, addedLeaf) {
   switch (root.type) {
     case ARRAY_NODE:
-      return assocArray(root, shift, hash, key, val, addedLeaf);
+      return assocArray(root, shift, hash, key2, val, addedLeaf);
     case INDEX_NODE:
-      return assocIndex(root, shift, hash, key, val, addedLeaf);
+      return assocIndex(root, shift, hash, key2, val, addedLeaf);
     case COLLISION_NODE:
-      return assocCollision(root, shift, hash, key, val, addedLeaf);
+      return assocCollision(root, shift, hash, key2, val, addedLeaf);
   }
 }
-function assocArray(root, shift, hash, key, val, addedLeaf) {
+function assocArray(root, shift, hash, key2, val, addedLeaf) {
   const idx = mask(hash, shift);
   const node = root.array[idx];
   if (node === void 0) {
@@ -542,11 +723,11 @@ function assocArray(root, shift, hash, key, val, addedLeaf) {
     return {
       type: ARRAY_NODE,
       size: root.size + 1,
-      array: cloneAndSet(root.array, idx, { type: ENTRY, k: key, v: val })
+      array: cloneAndSet(root.array, idx, { type: ENTRY, k: key2, v: val })
     };
   }
   if (node.type === ENTRY) {
-    if (isEqual(key, node.k)) {
+    if (isEqual(key2, node.k)) {
       if (val === node.v) {
         return root;
       }
@@ -555,7 +736,7 @@ function assocArray(root, shift, hash, key, val, addedLeaf) {
         size: root.size,
         array: cloneAndSet(root.array, idx, {
           type: ENTRY,
-          k: key,
+          k: key2,
           v: val
         })
       };
@@ -567,11 +748,11 @@ function assocArray(root, shift, hash, key, val, addedLeaf) {
       array: cloneAndSet(
         root.array,
         idx,
-        createNode(shift + SHIFT, node.k, node.v, hash, key, val)
+        createNode(shift + SHIFT, node.k, node.v, hash, key2, val)
       )
     };
   }
-  const n = assoc(node, shift + SHIFT, hash, key, val, addedLeaf);
+  const n = assoc(node, shift + SHIFT, hash, key2, val, addedLeaf);
   if (n === node) {
     return root;
   }
@@ -581,13 +762,13 @@ function assocArray(root, shift, hash, key, val, addedLeaf) {
     array: cloneAndSet(root.array, idx, n)
   };
 }
-function assocIndex(root, shift, hash, key, val, addedLeaf) {
+function assocIndex(root, shift, hash, key2, val, addedLeaf) {
   const bit = bitpos(hash, shift);
   const idx = index(root.bitmap, bit);
   if ((root.bitmap & bit) !== 0) {
     const node = root.array[idx];
     if (node.type !== ENTRY) {
-      const n = assoc(node, shift + SHIFT, hash, key, val, addedLeaf);
+      const n = assoc(node, shift + SHIFT, hash, key2, val, addedLeaf);
       if (n === node) {
         return root;
       }
@@ -598,7 +779,7 @@ function assocIndex(root, shift, hash, key, val, addedLeaf) {
       };
     }
     const nodeKey = node.k;
-    if (isEqual(key, nodeKey)) {
+    if (isEqual(key2, nodeKey)) {
       if (val === node.v) {
         return root;
       }
@@ -607,7 +788,7 @@ function assocIndex(root, shift, hash, key, val, addedLeaf) {
         bitmap: root.bitmap,
         array: cloneAndSet(root.array, idx, {
           type: ENTRY,
-          k: key,
+          k: key2,
           v: val
         })
       };
@@ -619,7 +800,7 @@ function assocIndex(root, shift, hash, key, val, addedLeaf) {
       array: cloneAndSet(
         root.array,
         idx,
-        createNode(shift + SHIFT, nodeKey, node.v, hash, key, val)
+        createNode(shift + SHIFT, nodeKey, node.v, hash, key2, val)
       )
     };
   } else {
@@ -627,7 +808,7 @@ function assocIndex(root, shift, hash, key, val, addedLeaf) {
     if (n >= MAX_INDEX_NODE) {
       const nodes = new Array(32);
       const jdx = mask(hash, shift);
-      nodes[jdx] = assocIndex(EMPTY, shift + SHIFT, hash, key, val, addedLeaf);
+      nodes[jdx] = assocIndex(EMPTY, shift + SHIFT, hash, key2, val, addedLeaf);
       let j = 0;
       let bitmap = root.bitmap;
       for (let i = 0; i < 32; i++) {
@@ -645,7 +826,7 @@ function assocIndex(root, shift, hash, key, val, addedLeaf) {
     } else {
       const newArray = spliceIn(root.array, idx, {
         type: ENTRY,
-        k: key,
+        k: key2,
         v: val
       });
       addedLeaf.val = true;
@@ -657,9 +838,9 @@ function assocIndex(root, shift, hash, key, val, addedLeaf) {
     }
   }
 }
-function assocCollision(root, shift, hash, key, val, addedLeaf) {
+function assocCollision(root, shift, hash, key2, val, addedLeaf) {
   if (hash === root.hash) {
-    const idx = collisionIndexOf(root, key);
+    const idx = collisionIndexOf(root, key2);
     if (idx !== -1) {
       const entry = root.array[idx];
       if (entry.v === val) {
@@ -668,7 +849,7 @@ function assocCollision(root, shift, hash, key, val, addedLeaf) {
       return {
         type: COLLISION_NODE,
         hash,
-        array: cloneAndSet(root.array, idx, { type: ENTRY, k: key, v: val })
+        array: cloneAndSet(root.array, idx, { type: ENTRY, k: key2, v: val })
       };
     }
     const size = root.array.length;
@@ -676,7 +857,7 @@ function assocCollision(root, shift, hash, key, val, addedLeaf) {
     return {
       type: COLLISION_NODE,
       hash,
-      array: cloneAndSet(root.array, size, { type: ENTRY, k: key, v: val })
+      array: cloneAndSet(root.array, size, { type: ENTRY, k: key2, v: val })
     };
   }
   return assoc(
@@ -687,45 +868,45 @@ function assocCollision(root, shift, hash, key, val, addedLeaf) {
     },
     shift,
     hash,
-    key,
+    key2,
     val,
     addedLeaf
   );
 }
-function collisionIndexOf(root, key) {
+function collisionIndexOf(root, key2) {
   const size = root.array.length;
   for (let i = 0; i < size; i++) {
-    if (isEqual(key, root.array[i].k)) {
+    if (isEqual(key2, root.array[i].k)) {
       return i;
     }
   }
   return -1;
 }
-function find(root, shift, hash, key) {
+function find(root, shift, hash, key2) {
   switch (root.type) {
     case ARRAY_NODE:
-      return findArray(root, shift, hash, key);
+      return findArray(root, shift, hash, key2);
     case INDEX_NODE:
-      return findIndex(root, shift, hash, key);
+      return findIndex(root, shift, hash, key2);
     case COLLISION_NODE:
-      return findCollision(root, key);
+      return findCollision(root, key2);
   }
 }
-function findArray(root, shift, hash, key) {
+function findArray(root, shift, hash, key2) {
   const idx = mask(hash, shift);
   const node = root.array[idx];
   if (node === void 0) {
     return void 0;
   }
   if (node.type !== ENTRY) {
-    return find(node, shift + SHIFT, hash, key);
+    return find(node, shift + SHIFT, hash, key2);
   }
-  if (isEqual(key, node.k)) {
+  if (isEqual(key2, node.k)) {
     return node;
   }
   return void 0;
 }
-function findIndex(root, shift, hash, key) {
+function findIndex(root, shift, hash, key2) {
   const bit = bitpos(hash, shift);
   if ((root.bitmap & bit) === 0) {
     return void 0;
@@ -733,31 +914,31 @@ function findIndex(root, shift, hash, key) {
   const idx = index(root.bitmap, bit);
   const node = root.array[idx];
   if (node.type !== ENTRY) {
-    return find(node, shift + SHIFT, hash, key);
+    return find(node, shift + SHIFT, hash, key2);
   }
-  if (isEqual(key, node.k)) {
+  if (isEqual(key2, node.k)) {
     return node;
   }
   return void 0;
 }
-function findCollision(root, key) {
-  const idx = collisionIndexOf(root, key);
+function findCollision(root, key2) {
+  const idx = collisionIndexOf(root, key2);
   if (idx < 0) {
     return void 0;
   }
   return root.array[idx];
 }
-function without(root, shift, hash, key) {
+function without(root, shift, hash, key2) {
   switch (root.type) {
     case ARRAY_NODE:
-      return withoutArray(root, shift, hash, key);
+      return withoutArray(root, shift, hash, key2);
     case INDEX_NODE:
-      return withoutIndex(root, shift, hash, key);
+      return withoutIndex(root, shift, hash, key2);
     case COLLISION_NODE:
-      return withoutCollision(root, key);
+      return withoutCollision(root, key2);
   }
 }
-function withoutArray(root, shift, hash, key) {
+function withoutArray(root, shift, hash, key2) {
   const idx = mask(hash, shift);
   const node = root.array[idx];
   if (node === void 0) {
@@ -765,11 +946,11 @@ function withoutArray(root, shift, hash, key) {
   }
   let n = void 0;
   if (node.type === ENTRY) {
-    if (!isEqual(node.k, key)) {
+    if (!isEqual(node.k, key2)) {
       return root;
     }
   } else {
-    n = without(node, shift + SHIFT, hash, key);
+    n = without(node, shift + SHIFT, hash, key2);
     if (n === node) {
       return root;
     }
@@ -818,7 +999,7 @@ function withoutArray(root, shift, hash, key) {
     array: cloneAndSet(root.array, idx, n)
   };
 }
-function withoutIndex(root, shift, hash, key) {
+function withoutIndex(root, shift, hash, key2) {
   const bit = bitpos(hash, shift);
   if ((root.bitmap & bit) === 0) {
     return root;
@@ -826,7 +1007,7 @@ function withoutIndex(root, shift, hash, key) {
   const idx = index(root.bitmap, bit);
   const node = root.array[idx];
   if (node.type !== ENTRY) {
-    const n = without(node, shift + SHIFT, hash, key);
+    const n = without(node, shift + SHIFT, hash, key2);
     if (n === node) {
       return root;
     }
@@ -846,7 +1027,7 @@ function withoutIndex(root, shift, hash, key) {
       array: spliceOut(root.array, idx)
     };
   }
-  if (isEqual(key, node.k)) {
+  if (isEqual(key2, node.k)) {
     if (root.bitmap === bit) {
       return void 0;
     }
@@ -858,8 +1039,8 @@ function withoutIndex(root, shift, hash, key) {
   }
   return root;
 }
-function withoutCollision(root, key) {
-  const idx = collisionIndexOf(root, key);
+function withoutCollision(root, key2) {
+  const idx = collisionIndexOf(root, key2);
   if (idx < 0) {
     return root;
   }
@@ -934,11 +1115,11 @@ var Dict = class _Dict {
    * @param {NotFound} notFound
    * @returns {NotFound | V}
    */
-  get(key, notFound) {
+  get(key2, notFound) {
     if (this.root === void 0) {
       return notFound;
     }
-    const found = find(this.root, 0, getHash(key), key);
+    const found = find(this.root, 0, getHash(key2), key2);
     if (found === void 0) {
       return notFound;
     }
@@ -949,10 +1130,10 @@ var Dict = class _Dict {
    * @param {V} val
    * @returns {Dict<K,V>}
    */
-  set(key, val) {
+  set(key2, val) {
     const addedLeaf = { val: false };
     const root = this.root === void 0 ? EMPTY : this.root;
-    const newRoot = assoc(root, 0, getHash(key), key, val, addedLeaf);
+    const newRoot = assoc(root, 0, getHash(key2), key2, val, addedLeaf);
     if (newRoot === this.root) {
       return this;
     }
@@ -962,11 +1143,11 @@ var Dict = class _Dict {
    * @param {K} key
    * @returns {Dict<K,V>}
    */
-  delete(key) {
+  delete(key2) {
     if (this.root === void 0) {
       return this;
     }
-    const newRoot = without(this.root, 0, getHash(key), key);
+    const newRoot = without(this.root, 0, getHash(key2), key2);
     if (newRoot === this.root) {
       return this;
     }
@@ -979,11 +1160,11 @@ var Dict = class _Dict {
    * @param {K} key
    * @returns {boolean}
    */
-  has(key) {
+  has(key2) {
     if (this.root === void 0) {
       return false;
     }
-    return find(this.root, 0, getHash(key), key) !== void 0;
+    return find(this.root, 0, getHash(key2), key2) !== void 0;
   }
   /**
    * @returns {[K,V][]}
@@ -1101,8 +1282,8 @@ function concat(xs) {
   }
   return result;
 }
-function string_codeunit_slice(str, from2, length4) {
-  return str.slice(from2, from2 + length4);
+function string_codeunit_slice(str, from2, length5) {
+  return str.slice(from2, from2 + length5);
 }
 function starts_with(haystack, needle) {
   return haystack.startsWith(needle);
@@ -1144,8 +1325,8 @@ function new_map() {
 function map_to_list(map8) {
   return List.fromArray(map8.entries());
 }
-function map_insert(key, value2, map8) {
-  return map8.set(key, value2);
+function map_insert(key2, value2, map8) {
+  return map8.set(key2, value2);
 }
 function classify_dynamic(data) {
   if (typeof data === "string") {
@@ -1254,10 +1435,10 @@ function inspectString(str) {
 function inspectDict(map8) {
   let body = "dict.from_list([";
   let first2 = true;
-  map8.forEach((value2, key) => {
+  map8.forEach((value2, key2) => {
     if (!first2)
       body = body + ", ";
-    body = body + "#(" + inspect(key) + ", " + inspect(value2) + ")";
+    body = body + "#(" + inspect(key2) + ", " + inspect(value2) + ")";
     first2 = false;
   });
   return body + "])";
@@ -1273,9 +1454,9 @@ function inspectObject(v) {
   return `//js(${head}{${body}})`;
 }
 function inspectCustomType(record) {
-  const props = Object.keys(record).map((label2) => {
-    const value2 = inspect(record[label2]);
-    return isNaN(parseInt(label2)) ? `${label2}: ${value2}` : value2;
+  const props = Object.keys(record).map((label) => {
+    const value2 = inspect(record[label]);
+    return isNaN(parseInt(label)) ? `${label}: ${value2}` : value2;
   }).join(", ");
   return props ? `${record.constructor.name}(${props})` : record.constructor.name;
 }
@@ -1287,151 +1468,6 @@ function inspectBitArray(bits) {
 }
 function inspectUtfCodepoint(codepoint2) {
   return `//utfcodepoint(${String.fromCodePoint(codepoint2.value)})`;
-}
-
-// build/dev/javascript/gleam_stdlib/gleam/dict.mjs
-function insert(dict2, key, value2) {
-  return map_insert(key, value2, dict2);
-}
-function reverse_and_concat(loop$remaining, loop$accumulator) {
-  while (true) {
-    let remaining = loop$remaining;
-    let accumulator = loop$accumulator;
-    if (remaining.hasLength(0)) {
-      return accumulator;
-    } else {
-      let item = remaining.head;
-      let rest = remaining.tail;
-      loop$remaining = rest;
-      loop$accumulator = prepend(item, accumulator);
-    }
-  }
-}
-function do_keys_loop(loop$list, loop$acc) {
-  while (true) {
-    let list2 = loop$list;
-    let acc = loop$acc;
-    if (list2.hasLength(0)) {
-      return reverse_and_concat(acc, toList([]));
-    } else {
-      let first2 = list2.head;
-      let rest = list2.tail;
-      loop$list = rest;
-      loop$acc = prepend(first2[0], acc);
-    }
-  }
-}
-function keys(dict2) {
-  let list_of_pairs = map_to_list(dict2);
-  return do_keys_loop(list_of_pairs, toList([]));
-}
-
-// build/dev/javascript/gleam_stdlib/gleam/list.mjs
-function reverse_loop(loop$remaining, loop$accumulator) {
-  while (true) {
-    let remaining = loop$remaining;
-    let accumulator = loop$accumulator;
-    if (remaining.hasLength(0)) {
-      return accumulator;
-    } else {
-      let item = remaining.head;
-      let rest$1 = remaining.tail;
-      loop$remaining = rest$1;
-      loop$accumulator = prepend(item, accumulator);
-    }
-  }
-}
-function reverse(list2) {
-  return reverse_loop(list2, toList([]));
-}
-function map_loop(loop$list, loop$fun, loop$acc) {
-  while (true) {
-    let list2 = loop$list;
-    let fun = loop$fun;
-    let acc = loop$acc;
-    if (list2.hasLength(0)) {
-      return reverse(acc);
-    } else {
-      let first$1 = list2.head;
-      let rest$1 = list2.tail;
-      loop$list = rest$1;
-      loop$fun = fun;
-      loop$acc = prepend(fun(first$1), acc);
-    }
-  }
-}
-function map(list2, fun) {
-  return map_loop(list2, fun, toList([]));
-}
-function new$() {
-  return toList([]);
-}
-function append_loop(loop$first, loop$second) {
-  while (true) {
-    let first2 = loop$first;
-    let second = loop$second;
-    if (first2.hasLength(0)) {
-      return second;
-    } else {
-      let item = first2.head;
-      let rest$1 = first2.tail;
-      loop$first = rest$1;
-      loop$second = prepend(item, second);
-    }
-  }
-}
-function append2(first2, second) {
-  return append_loop(reverse(first2), second);
-}
-function fold(loop$list, loop$initial, loop$fun) {
-  while (true) {
-    let list2 = loop$list;
-    let initial = loop$initial;
-    let fun = loop$fun;
-    if (list2.hasLength(0)) {
-      return initial;
-    } else {
-      let x = list2.head;
-      let rest$1 = list2.tail;
-      loop$list = rest$1;
-      loop$initial = fun(initial, x);
-      loop$fun = fun;
-    }
-  }
-}
-function index_fold_loop(loop$over, loop$acc, loop$with, loop$index) {
-  while (true) {
-    let over = loop$over;
-    let acc = loop$acc;
-    let with$ = loop$with;
-    let index5 = loop$index;
-    if (over.hasLength(0)) {
-      return acc;
-    } else {
-      let first$1 = over.head;
-      let rest$1 = over.tail;
-      loop$over = rest$1;
-      loop$acc = with$(acc, first$1, index5);
-      loop$with = with$;
-      loop$index = index5 + 1;
-    }
-  }
-}
-function index_fold(list2, initial, fun) {
-  return index_fold_loop(list2, initial, fun, 0);
-}
-function key_set(list2, key, value2) {
-  if (list2.hasLength(0)) {
-    return toList([[key, value2]]);
-  } else if (list2.atLeastLength(1) && isEqual(list2.head[0], key)) {
-    let k = list2.head[0];
-    let rest$1 = list2.tail;
-    return prepend([key, value2], rest$1);
-  } else {
-    let first$1 = list2.head;
-    let rest$1 = list2.tail;
-    return prepend(first$1, key_set(rest$1, key, value2));
-  }
 }
 
 // build/dev/javascript/gleam_stdlib/gleam/string.mjs
@@ -1472,6 +1508,244 @@ function split2(x, substring) {
 function inspect2(term) {
   let _pipe = inspect(term);
   return identity(_pipe);
+}
+
+// build/dev/javascript/gleam_stdlib/gleam_stdlib_decode_ffi.mjs
+function index2(data, key2) {
+  const int4 = Number.isInteger(key2);
+  if (data instanceof Dict || data instanceof WeakMap || data instanceof Map) {
+    const token = {};
+    const entry = data.get(key2, token);
+    if (entry === token)
+      return new Ok(new None());
+    return new Ok(new Some(entry));
+  }
+  if ((key2 === 0 || key2 === 1 || key2 === 2) && data instanceof List) {
+    let i = 0;
+    for (const value2 of data) {
+      if (i === key2)
+        return new Ok(new Some(value2));
+      i++;
+    }
+    return new Error("Indexable");
+  }
+  if (int4 && Array.isArray(data) || data && typeof data === "object" || data && Object.getPrototypeOf(data) === Object.prototype) {
+    if (key2 in data)
+      return new Ok(new Some(data[key2]));
+    return new Ok(new None());
+  }
+  return new Error(int4 ? "Indexable" : "Dict");
+}
+function int(data) {
+  if (Number.isInteger(data))
+    return new Ok(data);
+  return new Error(0);
+}
+function string(data) {
+  if (typeof data === "string")
+    return new Ok(data);
+  return new Error(0);
+}
+
+// build/dev/javascript/gleam_stdlib/gleam/dynamic/decode.mjs
+var DecodeError2 = class extends CustomType {
+  constructor(expected, found, path) {
+    super();
+    this.expected = expected;
+    this.found = found;
+    this.path = path;
+  }
+};
+var Decoder = class extends CustomType {
+  constructor(function$) {
+    super();
+    this.function = function$;
+  }
+};
+function run(data, decoder) {
+  let $ = decoder.function(data);
+  let maybe_invalid_data = $[0];
+  let errors = $[1];
+  if (errors.hasLength(0)) {
+    return new Ok(maybe_invalid_data);
+  } else {
+    return new Error(errors);
+  }
+}
+function success(data) {
+  return new Decoder((_) => {
+    return [data, toList([])];
+  });
+}
+function map3(decoder, transformer) {
+  return new Decoder(
+    (d) => {
+      let $ = decoder.function(d);
+      let data = $[0];
+      let errors = $[1];
+      return [transformer(data), errors];
+    }
+  );
+}
+function run_decoders(loop$data, loop$failure, loop$decoders) {
+  while (true) {
+    let data = loop$data;
+    let failure = loop$failure;
+    let decoders = loop$decoders;
+    if (decoders.hasLength(0)) {
+      return failure;
+    } else {
+      let decoder = decoders.head;
+      let decoders$1 = decoders.tail;
+      let $ = decoder.function(data);
+      let layer = $;
+      let errors = $[1];
+      if (errors.hasLength(0)) {
+        return layer;
+      } else {
+        loop$data = data;
+        loop$failure = failure;
+        loop$decoders = decoders$1;
+      }
+    }
+  }
+}
+function one_of(first2, alternatives) {
+  return new Decoder(
+    (dynamic_data) => {
+      let $ = first2.function(dynamic_data);
+      let layer = $;
+      let errors = $[1];
+      if (errors.hasLength(0)) {
+        return layer;
+      } else {
+        return run_decoders(dynamic_data, layer, alternatives);
+      }
+    }
+  );
+}
+function run_dynamic_function(data, name, f) {
+  let $ = f(data);
+  if ($.isOk()) {
+    let data$1 = $[0];
+    return [data$1, toList([])];
+  } else {
+    let zero = $[0];
+    return [
+      zero,
+      toList([new DecodeError2(name, classify_dynamic(data), toList([]))])
+    ];
+  }
+}
+function decode_int2(data) {
+  return run_dynamic_function(data, "Int", int);
+}
+var int2 = /* @__PURE__ */ new Decoder(decode_int2);
+function decode_string2(data) {
+  return run_dynamic_function(data, "String", string);
+}
+var string2 = /* @__PURE__ */ new Decoder(decode_string2);
+function push_path(layer, path) {
+  let decoder = one_of(
+    string2,
+    toList([
+      (() => {
+        let _pipe = int2;
+        return map3(_pipe, to_string);
+      })()
+    ])
+  );
+  let path$1 = map(
+    path,
+    (key2) => {
+      let key$1 = identity(key2);
+      let $ = run(key$1, decoder);
+      if ($.isOk()) {
+        let key$2 = $[0];
+        return key$2;
+      } else {
+        return "<" + classify_dynamic(key$1) + ">";
+      }
+    }
+  );
+  let errors = map(
+    layer[1],
+    (error) => {
+      let _record = error;
+      return new DecodeError2(
+        _record.expected,
+        _record.found,
+        append(path$1, error.path)
+      );
+    }
+  );
+  return [layer[0], errors];
+}
+function index3(loop$path, loop$position, loop$inner, loop$data, loop$handle_miss) {
+  while (true) {
+    let path = loop$path;
+    let position = loop$position;
+    let inner = loop$inner;
+    let data = loop$data;
+    let handle_miss = loop$handle_miss;
+    if (path.hasLength(0)) {
+      let _pipe = inner(data);
+      return push_path(_pipe, reverse(position));
+    } else {
+      let key2 = path.head;
+      let path$1 = path.tail;
+      let $ = index2(data, key2);
+      if ($.isOk() && $[0] instanceof Some) {
+        let data$1 = $[0][0];
+        loop$path = path$1;
+        loop$position = prepend(key2, position);
+        loop$inner = inner;
+        loop$data = data$1;
+        loop$handle_miss = handle_miss;
+      } else if ($.isOk() && $[0] instanceof None) {
+        return handle_miss(data, prepend(key2, position));
+      } else {
+        let kind = $[0];
+        let $1 = inner(data);
+        let default$ = $1[0];
+        let _pipe = [
+          default$,
+          toList([new DecodeError2(kind, classify_dynamic(data), toList([]))])
+        ];
+        return push_path(_pipe, reverse(position));
+      }
+    }
+  }
+}
+function subfield(field_path, field_decoder, next) {
+  return new Decoder(
+    (data) => {
+      let $ = index3(
+        field_path,
+        toList([]),
+        field_decoder.function,
+        data,
+        (data2, position) => {
+          let $12 = field_decoder.function(data2);
+          let default$ = $12[0];
+          let _pipe = [
+            default$,
+            toList([new DecodeError2("Field", "Nothing", toList([]))])
+          ];
+          return push_path(_pipe, reverse(position));
+        }
+      );
+      let out = $[0];
+      let errors1 = $[1];
+      let $1 = next(out).function(data);
+      let out$1 = $1[0];
+      let errors2 = $1[1];
+      return [out$1, append(errors1, errors2)];
+    }
+  );
+}
+function field(field_name, field_decoder, next) {
+  return subfield(toList([field_name]), field_decoder, next);
 }
 
 // build/dev/javascript/gleam_stdlib/gleam/io.mjs
@@ -2357,244 +2631,6 @@ function guard(requirement, consequence, alternative) {
   }
 }
 
-// build/dev/javascript/gleam_stdlib/gleam_stdlib_decode_ffi.mjs
-function index2(data, key) {
-  const int4 = Number.isInteger(key);
-  if (data instanceof Dict || data instanceof WeakMap || data instanceof Map) {
-    const token = {};
-    const entry = data.get(key, token);
-    if (entry === token)
-      return new Ok(new None());
-    return new Ok(new Some(entry));
-  }
-  if ((key === 0 || key === 1 || key === 2) && data instanceof List) {
-    let i = 0;
-    for (const value2 of data) {
-      if (i === key)
-        return new Ok(new Some(value2));
-      i++;
-    }
-    return new Error("Indexable");
-  }
-  if (int4 && Array.isArray(data) || data && typeof data === "object" || data && Object.getPrototypeOf(data) === Object.prototype) {
-    if (key in data)
-      return new Ok(new Some(data[key]));
-    return new Ok(new None());
-  }
-  return new Error(int4 ? "Indexable" : "Dict");
-}
-function int(data) {
-  if (Number.isInteger(data))
-    return new Ok(data);
-  return new Error(0);
-}
-function string(data) {
-  if (typeof data === "string")
-    return new Ok(data);
-  return new Error(0);
-}
-
-// build/dev/javascript/gleam_stdlib/gleam/dynamic/decode.mjs
-var DecodeError2 = class extends CustomType {
-  constructor(expected, found, path) {
-    super();
-    this.expected = expected;
-    this.found = found;
-    this.path = path;
-  }
-};
-var Decoder = class extends CustomType {
-  constructor(function$) {
-    super();
-    this.function = function$;
-  }
-};
-function run(data, decoder) {
-  let $ = decoder.function(data);
-  let maybe_invalid_data = $[0];
-  let errors = $[1];
-  if (errors.hasLength(0)) {
-    return new Ok(maybe_invalid_data);
-  } else {
-    return new Error(errors);
-  }
-}
-function success(data) {
-  return new Decoder((_) => {
-    return [data, toList([])];
-  });
-}
-function map3(decoder, transformer) {
-  return new Decoder(
-    (d) => {
-      let $ = decoder.function(d);
-      let data = $[0];
-      let errors = $[1];
-      return [transformer(data), errors];
-    }
-  );
-}
-function run_decoders(loop$data, loop$failure, loop$decoders) {
-  while (true) {
-    let data = loop$data;
-    let failure = loop$failure;
-    let decoders = loop$decoders;
-    if (decoders.hasLength(0)) {
-      return failure;
-    } else {
-      let decoder = decoders.head;
-      let decoders$1 = decoders.tail;
-      let $ = decoder.function(data);
-      let layer = $;
-      let errors = $[1];
-      if (errors.hasLength(0)) {
-        return layer;
-      } else {
-        loop$data = data;
-        loop$failure = failure;
-        loop$decoders = decoders$1;
-      }
-    }
-  }
-}
-function one_of(first2, alternatives) {
-  return new Decoder(
-    (dynamic_data) => {
-      let $ = first2.function(dynamic_data);
-      let layer = $;
-      let errors = $[1];
-      if (errors.hasLength(0)) {
-        return layer;
-      } else {
-        return run_decoders(dynamic_data, layer, alternatives);
-      }
-    }
-  );
-}
-function run_dynamic_function(data, name, f) {
-  let $ = f(data);
-  if ($.isOk()) {
-    let data$1 = $[0];
-    return [data$1, toList([])];
-  } else {
-    let zero = $[0];
-    return [
-      zero,
-      toList([new DecodeError2(name, classify_dynamic(data), toList([]))])
-    ];
-  }
-}
-function decode_int2(data) {
-  return run_dynamic_function(data, "Int", int);
-}
-var int2 = /* @__PURE__ */ new Decoder(decode_int2);
-function decode_string2(data) {
-  return run_dynamic_function(data, "String", string);
-}
-var string2 = /* @__PURE__ */ new Decoder(decode_string2);
-function push_path(layer, path) {
-  let decoder = one_of(
-    string2,
-    toList([
-      (() => {
-        let _pipe = int2;
-        return map3(_pipe, to_string);
-      })()
-    ])
-  );
-  let path$1 = map(
-    path,
-    (key) => {
-      let key$1 = identity(key);
-      let $ = run(key$1, decoder);
-      if ($.isOk()) {
-        let key$2 = $[0];
-        return key$2;
-      } else {
-        return "<" + classify_dynamic(key$1) + ">";
-      }
-    }
-  );
-  let errors = map(
-    layer[1],
-    (error) => {
-      let _record = error;
-      return new DecodeError2(
-        _record.expected,
-        _record.found,
-        append2(path$1, error.path)
-      );
-    }
-  );
-  return [layer[0], errors];
-}
-function index3(loop$path, loop$position, loop$inner, loop$data, loop$handle_miss) {
-  while (true) {
-    let path = loop$path;
-    let position = loop$position;
-    let inner = loop$inner;
-    let data = loop$data;
-    let handle_miss = loop$handle_miss;
-    if (path.hasLength(0)) {
-      let _pipe = inner(data);
-      return push_path(_pipe, reverse(position));
-    } else {
-      let key = path.head;
-      let path$1 = path.tail;
-      let $ = index2(data, key);
-      if ($.isOk() && $[0] instanceof Some) {
-        let data$1 = $[0][0];
-        loop$path = path$1;
-        loop$position = prepend(key, position);
-        loop$inner = inner;
-        loop$data = data$1;
-        loop$handle_miss = handle_miss;
-      } else if ($.isOk() && $[0] instanceof None) {
-        return handle_miss(data, prepend(key, position));
-      } else {
-        let kind = $[0];
-        let $1 = inner(data);
-        let default$ = $1[0];
-        let _pipe = [
-          default$,
-          toList([new DecodeError2(kind, classify_dynamic(data), toList([]))])
-        ];
-        return push_path(_pipe, reverse(position));
-      }
-    }
-  }
-}
-function subfield(field_path, field_decoder, next) {
-  return new Decoder(
-    (data) => {
-      let $ = index3(
-        field_path,
-        toList([]),
-        field_decoder.function,
-        data,
-        (data2, position) => {
-          let $12 = field_decoder.function(data2);
-          let default$ = $12[0];
-          let _pipe = [
-            default$,
-            toList([new DecodeError2("Field", "Nothing", toList([]))])
-          ];
-          return push_path(_pipe, reverse(position));
-        }
-      );
-      let out = $[0];
-      let errors1 = $[1];
-      let $1 = next(out).function(data);
-      let out$1 = $1[0];
-      let errors2 = $1[1];
-      return [out$1, append2(errors1, errors2)];
-    }
-  );
-}
-function field(field_name, field_decoder, next) {
-  return subfield(toList([field_name]), field_decoder, next);
-}
-
 // build/dev/javascript/gleam_json/gleam_json_ffi.mjs
 function json_to_string(json) {
   return JSON.stringify(json);
@@ -2767,6 +2803,18 @@ function from(effect) {
 function none() {
   return new Effect(toList([]));
 }
+function batch(effects) {
+  return new Effect(
+    fold(
+      effects,
+      toList([]),
+      (b, _use1) => {
+        let a2 = _use1.all;
+        return append(b, a2);
+      }
+    )
+  );
+}
 function map4(effect, f) {
   return new Effect(
     map(
@@ -2799,9 +2847,9 @@ var Text = class extends CustomType {
   }
 };
 var Element = class extends CustomType {
-  constructor(key, namespace, tag, attrs, children2, self_closing, void$) {
+  constructor(key2, namespace, tag, attrs, children2, self_closing, void$) {
     super();
-    this.key = key;
+    this.key = key2;
     this.namespace = namespace;
     this.tag = tag;
     this.attrs = attrs;
@@ -2841,12 +2889,12 @@ function attribute_to_event_handler(attribute2) {
     return new Ok([name$1, handler]);
   }
 }
-function do_element_list_handlers(elements2, handlers2, key) {
+function do_element_list_handlers(elements2, handlers2, key2) {
   return index_fold(
     elements2,
     handlers2,
     (handlers3, element2, index5) => {
-      let key$1 = key + "-" + to_string(index5);
+      let key$1 = key2 + "-" + to_string(index5);
       return do_handlers(element2, handlers3, key$1);
     }
   );
@@ -2855,14 +2903,14 @@ function do_handlers(loop$element, loop$handlers, loop$key) {
   while (true) {
     let element2 = loop$element;
     let handlers2 = loop$handlers;
-    let key = loop$key;
+    let key2 = loop$key;
     if (element2 instanceof Text) {
       return handlers2;
     } else if (element2 instanceof Map2) {
       let subtree = element2.subtree;
       loop$element = subtree();
       loop$handlers = handlers2;
-      loop$key = key;
+      loop$key = key2;
     } else {
       let attrs = element2.attrs;
       let children2 = element2.children;
@@ -2874,13 +2922,13 @@ function do_handlers(loop$element, loop$handlers, loop$key) {
           if ($.isOk()) {
             let name = $[0][0];
             let handler = $[0][1];
-            return insert(handlers3, key + "-" + name, handler);
+            return insert(handlers3, key2 + "-" + name, handler);
           } else {
             return handlers3;
           }
         }
       );
-      return do_element_list_handlers(children2, handlers$1, key);
+      return do_element_list_handlers(children2, handlers$1, key2);
     }
   }
 }
@@ -2895,25 +2943,17 @@ function attribute(name, value2) {
 function on(name, handler) {
   return new Event("on" + name, handler);
 }
-function style(properties) {
-  return attribute(
-    "style",
-    fold(
-      properties,
-      "",
-      (styles, _use1) => {
-        let name$1 = _use1[0];
-        let value$1 = _use1[1];
-        return styles + name$1 + ":" + value$1 + ";";
-      }
-    )
-  );
-}
 function class$(name) {
   return attribute("class", name);
 }
+function type_(name) {
+  return attribute("type", name);
+}
 function value(val) {
   return attribute("value", val);
+}
+function placeholder(text3) {
+  return attribute("placeholder", text3);
 }
 function href(uri) {
   return attribute("href", uri);
@@ -3300,9 +3340,9 @@ function getKeyedChildren(el) {
   const keyedChildren = /* @__PURE__ */ new Map();
   if (el) {
     for (const child of children(el)) {
-      const key = child?.key || child?.getAttribute?.("data-lustre-key");
-      if (key)
-        keyedChildren.set(key, child);
+      const key2 = child?.key || child?.getAttribute?.("data-lustre-key");
+      if (key2)
+        keyedChildren.set(key2, child);
     }
   }
   return keyedChildren;
@@ -3330,9 +3370,9 @@ function diffKeyedChild(prevChild, child, el, stack, incomingKeyedChildren, keye
     return prevChild;
   }
   if (!keyedChild && prevChild !== null) {
-    const placeholder = document.createTextNode("");
-    el.insertBefore(placeholder, prevChild);
-    stack.unshift({ prev: placeholder, next: child, parent: el });
+    const placeholder2 = document.createTextNode("");
+    el.insertBefore(placeholder2, prevChild);
+    stack.unshift({ prev: placeholder2, next: child, parent: el });
     return prevChild;
   }
   if (!keyedChild || keyedChild === prevChild) {
@@ -3371,13 +3411,13 @@ var LustreClientApplication = class _LustreClientApplication {
    *
    * @returns {Gleam.Ok<(action: Lustre.Action<Lustre.Client, Msg>>) => void>}
    */
-  static start({ init: init5, update: update3, view: view3 }, selector, flags) {
+  static start({ init: init5, update: update3, view: view4 }, selector, flags) {
     if (!is_browser())
       return new Error(new NotABrowser());
     const root = selector instanceof HTMLElement ? selector : document.querySelector(selector);
     if (!root)
       return new Error(new ElementNotFound(selector));
-    const app = new _LustreClientApplication(root, init5(flags), update3, view3);
+    const app = new _LustreClientApplication(root, init5(flags), update3, view4);
     return new Ok((action) => app.send(action));
   }
   /**
@@ -3388,11 +3428,11 @@ var LustreClientApplication = class _LustreClientApplication {
    *
    * @returns {LustreClientApplication}
    */
-  constructor(root, [init5, effects], update3, view3) {
+  constructor(root, [init5, effects], update3, view4) {
     this.root = root;
     this.#model = init5;
     this.#update = update3;
-    this.#view = view3;
+    this.#view = view4;
     this.#tickScheduled = window.requestAnimationFrame(
       () => this.#tick(effects.all.toArray(), true)
     );
@@ -3506,20 +3546,20 @@ var LustreClientApplication = class _LustreClientApplication {
 };
 var start = LustreClientApplication.start;
 var LustreServerApplication = class _LustreServerApplication {
-  static start({ init: init5, update: update3, view: view3, on_attribute_change }, flags) {
+  static start({ init: init5, update: update3, view: view4, on_attribute_change }, flags) {
     const app = new _LustreServerApplication(
       init5(flags),
       update3,
-      view3,
+      view4,
       on_attribute_change
     );
     return new Ok((action) => app.send(action));
   }
-  constructor([model, effects], update3, view3, on_attribute_change) {
+  constructor([model, effects], update3, view4, on_attribute_change) {
     this.#model = model;
     this.#update = update3;
-    this.#view = view3;
-    this.#html = view3(model);
+    this.#view = view4;
+    this.#html = view4(model);
     this.#onAttributeChange = on_attribute_change;
     this.#renderers = /* @__PURE__ */ new Map();
     this.#handlers = handlers(this.#html);
@@ -3620,11 +3660,11 @@ var is_browser = () => globalThis.window && window.document;
 
 // build/dev/javascript/lustre/lustre.mjs
 var App = class extends CustomType {
-  constructor(init5, update3, view3, on_attribute_change) {
+  constructor(init5, update3, view4, on_attribute_change) {
     super();
     this.init = init5;
     this.update = update3;
-    this.view = view3;
+    this.view = view4;
     this.on_attribute_change = on_attribute_change;
   }
 };
@@ -3636,8 +3676,8 @@ var ElementNotFound = class extends CustomType {
 };
 var NotABrowser = class extends CustomType {
 };
-function application(init5, update3, view3) {
-  return new App(init5, update3, view3, new None());
+function application(init5, update3, view4) {
+  return new App(init5, update3, view4, new None());
 }
 function start2(app, selector, flags) {
   return guard(
@@ -3676,176 +3716,6 @@ function button(attrs, children2) {
 }
 function input(attrs) {
   return element("input", attrs, toList([]));
-}
-function label(attrs, children2) {
-  return element("label", attrs, children2);
-}
-
-// build/dev/javascript/lustre_ui/lustre/ui/cluster.mjs
-function of(element2, attributes, children2) {
-  return element2(
-    prepend(class$("lustre-ui-cluster"), attributes),
-    children2
-  );
-}
-
-// build/dev/javascript/modem/modem.ffi.mjs
-var defaults = {
-  handle_external_links: false,
-  handle_internal_links: true
-};
-var initial_location = window?.location?.href;
-var do_init = (dispatch, options = defaults) => {
-  document.addEventListener("click", (event2) => {
-    const a2 = find_anchor(event2.target);
-    if (!a2)
-      return;
-    try {
-      const url = new URL(a2.href);
-      const uri = uri_from_url(url);
-      const is_external = url.host !== window.location.host;
-      if (!options.handle_external_links && is_external)
-        return;
-      if (!options.handle_internal_links && !is_external)
-        return;
-      event2.preventDefault();
-      if (!is_external) {
-        window.history.pushState({}, "", a2.href);
-        window.requestAnimationFrame(() => {
-          if (url.hash) {
-            document.getElementById(url.hash.slice(1))?.scrollIntoView();
-          }
-        });
-      }
-      return dispatch(uri);
-    } catch {
-      return;
-    }
-  });
-  window.addEventListener("popstate", (e) => {
-    e.preventDefault();
-    const url = new URL(window.location.href);
-    const uri = uri_from_url(url);
-    window.requestAnimationFrame(() => {
-      if (url.hash) {
-        document.getElementById(url.hash.slice(1))?.scrollIntoView();
-      }
-    });
-    dispatch(uri);
-  });
-  window.addEventListener("modem-push", ({ detail }) => {
-    dispatch(detail);
-  });
-  window.addEventListener("modem-replace", ({ detail }) => {
-    dispatch(detail);
-  });
-};
-var find_anchor = (el) => {
-  if (!el || el.tagName === "BODY") {
-    return null;
-  } else if (el.tagName === "A") {
-    return el;
-  } else {
-    return find_anchor(el.parentElement);
-  }
-};
-var uri_from_url = (url) => {
-  return new Uri(
-    /* scheme   */
-    url.protocol ? new Some(url.protocol.slice(0, -1)) : new None(),
-    /* userinfo */
-    new None(),
-    /* host     */
-    url.hostname ? new Some(url.hostname) : new None(),
-    /* port     */
-    url.port ? new Some(Number(url.port)) : new None(),
-    /* path     */
-    url.pathname,
-    /* query    */
-    url.search ? new Some(url.search.slice(1)) : new None(),
-    /* fragment */
-    url.hash ? new Some(url.hash.slice(1)) : new None()
-  );
-};
-
-// build/dev/javascript/modem/modem.mjs
-function init2(handler) {
-  return from(
-    (dispatch) => {
-      return guard(
-        !is_browser(),
-        void 0,
-        () => {
-          return do_init(
-            (uri) => {
-              let _pipe = uri;
-              let _pipe$1 = handler(_pipe);
-              return dispatch(_pipe$1);
-            }
-          );
-        }
-      );
-    }
-  );
-}
-
-// build/dev/javascript/maillage/api/user.mjs
-var User = class extends CustomType {
-  constructor(id, name, email, slug) {
-    super();
-    this.id = id;
-    this.name = name;
-    this.email = email;
-    this.slug = slug;
-  }
-};
-
-// build/dev/javascript/maillage/ui/auth/msg.mjs
-var ActionLogin = class extends CustomType {
-};
-var ActionRegister = class extends CustomType {
-};
-var AuthSwitchAction = class extends CustomType {
-  constructor(x0) {
-    super();
-    this[0] = x0;
-  }
-};
-var LoginResponse = class extends CustomType {
-  constructor(x0) {
-    super();
-    this[0] = x0;
-  }
-};
-var Authenticate = class extends CustomType {
-};
-
-// build/dev/javascript/maillage/shared.mjs
-var OnChangeView = class extends CustomType {
-  constructor(view3) {
-    super();
-    this.view = view3;
-  }
-};
-var AuthMessage = class extends CustomType {
-  constructor(x0) {
-    super();
-    this[0] = x0;
-  }
-};
-var Main = class extends CustomType {
-};
-var Auth = class extends CustomType {
-};
-
-// build/dev/javascript/lustre/lustre/event.mjs
-function on2(name, handler) {
-  return on(name, handler);
-}
-function on_click(msg) {
-  return on2("click", (_) => {
-    return new Ok(msg);
-  });
 }
 
 // build/dev/javascript/gleam_http/gleam/http.mjs
@@ -3968,8 +3838,8 @@ function from_uri(uri) {
     }
   );
 }
-function set_header(request, key, value2) {
-  let headers = key_set(request.headers, lowercase(key), value2);
+function set_header(request, key2, value2) {
+  let headers = key_set(request.headers, lowercase(key2), value2);
   let _record = request;
   return new Request(
     _record.method,
@@ -4246,10 +4116,180 @@ function expect_json(decoder, to_msg) {
   );
 }
 
+// build/dev/javascript/lustre_ui/lustre/ui/cluster.mjs
+function of(element2, attributes, children2) {
+  return element2(
+    prepend(class$("lustre-ui-cluster"), attributes),
+    children2
+  );
+}
+
+// build/dev/javascript/modem/modem.ffi.mjs
+var defaults = {
+  handle_external_links: false,
+  handle_internal_links: true
+};
+var initial_location = window?.location?.href;
+var do_init = (dispatch, options = defaults) => {
+  document.addEventListener("click", (event2) => {
+    const a2 = find_anchor(event2.target);
+    if (!a2)
+      return;
+    try {
+      const url = new URL(a2.href);
+      const uri = uri_from_url(url);
+      const is_external = url.host !== window.location.host;
+      if (!options.handle_external_links && is_external)
+        return;
+      if (!options.handle_internal_links && !is_external)
+        return;
+      event2.preventDefault();
+      if (!is_external) {
+        window.history.pushState({}, "", a2.href);
+        window.requestAnimationFrame(() => {
+          if (url.hash) {
+            document.getElementById(url.hash.slice(1))?.scrollIntoView();
+          }
+        });
+      }
+      return dispatch(uri);
+    } catch {
+      return;
+    }
+  });
+  window.addEventListener("popstate", (e) => {
+    e.preventDefault();
+    const url = new URL(window.location.href);
+    const uri = uri_from_url(url);
+    window.requestAnimationFrame(() => {
+      if (url.hash) {
+        document.getElementById(url.hash.slice(1))?.scrollIntoView();
+      }
+    });
+    dispatch(uri);
+  });
+  window.addEventListener("modem-push", ({ detail }) => {
+    dispatch(detail);
+  });
+  window.addEventListener("modem-replace", ({ detail }) => {
+    dispatch(detail);
+  });
+};
+var do_replace = (uri) => {
+  window.history.replaceState({}, "", to_string2(uri));
+  window.requestAnimationFrame(() => {
+    if (uri.fragment[0]) {
+      document.getElementById(uri.fragment[0])?.scrollIntoView();
+    }
+  });
+  window.dispatchEvent(new CustomEvent("modem-replace", { detail: uri }));
+};
+var find_anchor = (el) => {
+  if (!el || el.tagName === "BODY") {
+    return null;
+  } else if (el.tagName === "A") {
+    return el;
+  } else {
+    return find_anchor(el.parentElement);
+  }
+};
+var uri_from_url = (url) => {
+  return new Uri(
+    /* scheme   */
+    url.protocol ? new Some(url.protocol.slice(0, -1)) : new None(),
+    /* userinfo */
+    new None(),
+    /* host     */
+    url.hostname ? new Some(url.hostname) : new None(),
+    /* port     */
+    url.port ? new Some(Number(url.port)) : new None(),
+    /* path     */
+    url.pathname,
+    /* query    */
+    url.search ? new Some(url.search.slice(1)) : new None(),
+    /* fragment */
+    url.hash ? new Some(url.hash.slice(1)) : new None()
+  );
+};
+
+// build/dev/javascript/modem/modem.mjs
+function init2(handler) {
+  return from(
+    (dispatch) => {
+      return guard(
+        !is_browser(),
+        void 0,
+        () => {
+          return do_init(
+            (uri) => {
+              let _pipe = uri;
+              let _pipe$1 = handler(_pipe);
+              return dispatch(_pipe$1);
+            }
+          );
+        }
+      );
+    }
+  );
+}
+var relative = /* @__PURE__ */ new Uri(
+  /* @__PURE__ */ new None(),
+  /* @__PURE__ */ new None(),
+  /* @__PURE__ */ new None(),
+  /* @__PURE__ */ new None(),
+  "",
+  /* @__PURE__ */ new None(),
+  /* @__PURE__ */ new None()
+);
+function replace3(path, query, fragment) {
+  return from(
+    (_) => {
+      return guard(
+        !is_browser(),
+        void 0,
+        () => {
+          return do_replace(
+            (() => {
+              let _record = relative;
+              return new Uri(
+                _record.scheme,
+                _record.userinfo,
+                _record.host,
+                _record.port,
+                path,
+                query,
+                fragment
+              );
+            })()
+          );
+        }
+      );
+    }
+  );
+}
+
 // build/dev/javascript/maillage/api/service.mjs
 function get_url() {
   return "http://localhost:8000";
 }
+
+// build/dev/javascript/maillage/api/user.mjs
+var User = class extends CustomType {
+  constructor(id, name, email, slug) {
+    super();
+    this.id = id;
+    this.name = name;
+    this.email = email;
+    this.slug = slug;
+  }
+};
+var AuthenticatedUser = class extends CustomType {
+  constructor(user, session_token) {
+    super();
+    this.user = user;
+    this.session_token = session_token;
+  }
+};
 
 // build/dev/javascript/maillage/gleamql.mjs
 var Request2 = class extends CustomType {
@@ -4294,9 +4334,9 @@ function set_operation_name(req, operation_name) {
     new Some(operation_name)
   );
 }
-function set_variable(req, key, value2) {
+function set_variable(req, key2, value2) {
   let variables = prepend(
-    [key, value2],
+    [key2, value2],
     (() => {
       let _pipe = req.variables;
       return unwrap(_pipe, new$());
@@ -4396,12 +4436,12 @@ function set_uri(req, string_uri) {
     _record.operation_name
   );
 }
-function set_header3(req, key, value2) {
+function set_header3(req, key2, value2) {
   let _record = req;
   return new Request2(
     (() => {
       let _pipe = req.http_request;
-      return set_header(_pipe, key, value2);
+      return set_header(_pipe, key2, value2);
     })(),
     _record.query,
     _record.variables,
@@ -4410,20 +4450,370 @@ function set_header3(req, key, value2) {
   );
 }
 
-// build/dev/javascript/maillage/ui/auth/auth.mjs
-var Model2 = class extends CustomType {
-  constructor(action) {
+// build/dev/javascript/maillage/ui/auth/msg.mjs
+var ActionLogin = class extends CustomType {
+};
+var ActionRegister = class extends CustomType {
+};
+var AuthSwitchAction = class extends CustomType {
+  constructor(x0) {
     super();
-    this.action = action;
+    this[0] = x0;
   }
 };
-function init3(_) {
-  return [new Model2(new ActionLogin()), none()];
+var LoginResponse = class extends CustomType {
+  constructor(x0) {
+    super();
+    this[0] = x0;
+  }
+};
+var Authenticate = class extends CustomType {
+};
+
+// build/dev/javascript/maillage/shared.mjs
+var OnChangeView = class extends CustomType {
+  constructor(view4) {
+    super();
+    this.view = view4;
+  }
+};
+var AuthMessage = class extends CustomType {
+  constructor(x0) {
+    super();
+    this[0] = x0;
+  }
+};
+var Noop = class extends CustomType {
+};
+var Main = class extends CustomType {
+};
+var Auth = class extends CustomType {
+};
+
+// build/dev/javascript/plinth/storage_ffi.mjs
+function localStorage() {
+  try {
+    if (globalThis.Storage && globalThis.localStorage instanceof globalThis.Storage) {
+      return new Ok(globalThis.localStorage);
+    } else {
+      return new Error(null);
+    }
+  } catch {
+    return new Error(null);
+  }
 }
-function feature(icon_name, title, description) {
+function getItem(storage, keyName) {
+  return null_or(storage.getItem(keyName));
+}
+function setItem(storage, keyName, keyValue) {
+  try {
+    storage.setItem(keyName, keyValue);
+    return new Ok(null);
+  } catch {
+    return new Error(null);
+  }
+}
+function null_or(val) {
+  if (val !== null) {
+    return new Ok(val);
+  } else {
+    return new Error(null);
+  }
+}
+
+// build/dev/javascript/varasto/varasto.mjs
+var NotFound2 = class extends CustomType {
+};
+var DecodeError3 = class extends CustomType {
+  constructor(err) {
+    super();
+    this.err = err;
+  }
+};
+var TypedStorage = class extends CustomType {
+  constructor(raw_storage, reader, writer) {
+    super();
+    this.raw_storage = raw_storage;
+    this.reader = reader;
+    this.writer = writer;
+  }
+};
+function new$6(raw_storage, reader, writer) {
+  return new TypedStorage(raw_storage, reader, writer);
+}
+function get(storage, key2) {
+  return try$(
+    (() => {
+      let _pipe = getItem(storage.raw_storage, key2);
+      return replace_error(_pipe, new NotFound2());
+    })(),
+    (str) => {
+      let _pipe = decode2(str, storage.reader);
+      return map_error(
+        _pipe,
+        (var0) => {
+          return new DecodeError3(var0);
+        }
+      );
+    }
+  );
+}
+function set(storage, key2, value2) {
+  let encoded = (() => {
+    let _pipe = value2;
+    let _pipe$1 = storage.writer(_pipe);
+    return to_string3(_pipe$1);
+  })();
+  return setItem(storage.raw_storage, key2, encoded);
+}
+
+// build/dev/javascript/lustre/lustre/event.mjs
+function on2(name, handler) {
+  return on(name, handler);
+}
+function on_click(msg) {
+  return on2("click", (_) => {
+    return new Ok(msg);
+  });
+}
+
+// build/dev/javascript/maillage/ui/color.mjs
+var Primary = class extends CustomType {
+};
+var Secondary = class extends CustomType {
+};
+var None2 = class extends CustomType {
+};
+
+// build/dev/javascript/maillage/ui/components/button.mjs
+var Button = class extends CustomType {
+  constructor(label, outline, color, msg) {
+    super();
+    this.label = label;
+    this.outline = outline;
+    this.color = color;
+    this.msg = msg;
+  }
+};
+var None3 = class extends CustomType {
+};
+function new$7(label, msg) {
+  return new Button(label, new None3(), new None2(), msg);
+}
+function with_outline(button2, outline) {
+  let _record = button2;
+  return new Button(_record.label, outline, _record.color, _record.msg);
+}
+function with_color(button2, color) {
+  let _record = button2;
+  return new Button(_record.label, _record.outline, color, _record.msg);
+}
+function render(button2) {
+  let bg = (() => {
+    let $ = button2.color;
+    if ($ instanceof Primary) {
+      return "bg-brand-700";
+    } else if ($ instanceof Secondary) {
+      return "";
+    } else {
+      return "";
+    }
+  })();
+  let fg = (() => {
+    let $ = button2.color;
+    if ($ instanceof Primary) {
+      return "color-default-background";
+    } else if ($ instanceof Secondary) {
+      return "";
+    } else {
+      return "";
+    }
+  })();
+  return button(
+    toList([
+      class$(bg + " " + fg + " rounded-md h-10 w-full flex-none"),
+      on_click(button2.msg)
+    ]),
+    toList([text2(button2.label)])
+  );
+}
+function primary(label, msg) {
+  let _pipe = new$7(label, msg);
+  let _pipe$1 = with_outline(_pipe, new None3());
+  return with_color(_pipe$1, new Primary());
+}
+
+// build/dev/javascript/maillage/ui/components/input.mjs
+var Input = class extends CustomType {
+  constructor(placeholder2, value2, input_type, validation, on_input) {
+    super();
+    this.placeholder = placeholder2;
+    this.value = value2;
+    this.input_type = input_type;
+    this.validation = validation;
+    this.on_input = on_input;
+  }
+};
+var Text2 = class extends CustomType {
+};
+var Password = class extends CustomType {
+};
+var Email = class extends CustomType {
+};
+var Unset = class extends CustomType {
+};
+function new$8(placeholder2, on_input) {
+  return new Input(placeholder2, "", new Text2(), new Unset(), on_input);
+}
+function with_type(input2, input_type) {
+  let _record = input2;
+  return new Input(
+    _record.placeholder,
+    _record.value,
+    input_type,
+    _record.validation,
+    _record.on_input
+  );
+}
+function with_validation(input2, validation) {
+  let _record = input2;
+  return new Input(
+    _record.placeholder,
+    _record.value,
+    _record.input_type,
+    validation,
+    _record.on_input
+  );
+}
+function render2(input2) {
+  let type_attr = (() => {
+    let $ = input2.input_type;
+    if ($ instanceof Text2) {
+      return "text";
+    } else if ($ instanceof Password) {
+      return "password";
+    } else if ($ instanceof Email) {
+      return "email";
+    } else {
+      return "number";
+    }
+  })();
+  return input(
+    toList([
+      class$("bg-transparent w-full h-full text-default-font"),
+      type_(type_attr),
+      placeholder(input2.placeholder),
+      value(input2.value)
+    ])
+  );
+}
+function email_input(placeholder2, on_input) {
+  let _pipe = new$8(placeholder2, on_input);
+  let _pipe$1 = with_type(_pipe, new Email());
+  return with_validation(_pipe$1, new Unset());
+}
+function password_input(placeholder2, on_input) {
+  let _pipe = new$8(placeholder2, on_input);
+  let _pipe$1 = with_type(_pipe, new Password());
+  return with_validation(_pipe$1, new Unset());
+}
+
+// build/dev/javascript/maillage/ui/components/field.mjs
+function form_field(label, field3) {
+  return div(
+    toList([class$("w-full")]),
+    toList([
+      span(
+        toList([class$("text-default-font")]),
+        toList([text2(label)])
+      ),
+      div(
+        toList([
+          class$(
+            "rounded-md border border-solid border-neutral-border"
+          )
+        ]),
+        toList([
+          div(
+            toList([]),
+            toList([
+              (() => {
+                let _pipe = field3;
+                return render2(_pipe);
+              })()
+            ])
+          )
+        ])
+      )
+    ])
+  );
+}
+
+// build/dev/javascript/maillage/ui/components/link.mjs
+function view(href2, text3, on_click2) {
+  return a(
+    toList([
+      class$("text-brand-700 font-body"),
+      href(href2),
+      on_click(on_click2)
+    ]),
+    toList([text2(text3)])
+  );
+}
+
+// build/dev/javascript/maillage/ui/auth/auth.mjs
+var Model2 = class extends CustomType {
+  constructor(action, current_user) {
+    super();
+    this.action = action;
+    this.current_user = current_user;
+  }
+};
+function get_storage() {
+  let $ = localStorage();
+  if (!$.isOk()) {
+    throw makeError(
+      "let_assert",
+      "ui/auth/auth",
+      104,
+      "get_storage",
+      "Pattern match failed, no pattern matched the value.",
+      { value: $ }
+    );
+  }
+  let local = $[0];
+  let reader = () => {
+    return (item) => {
+      let _pipe = run(item, string2);
+      return map_error(_pipe, (_) => {
+        return toList([]);
+      });
+    };
+  };
+  let writer = () => {
+    return (val) => {
+      return string3(val);
+    };
+  };
+  return new$6(local, reader(), writer());
+}
+function set_token(session_token) {
+  let s = get_storage();
+  return set(s, "token", session_token);
+}
+function get_token() {
+  let s = get_storage();
+  return get(s, "token");
+}
+function init3(_) {
+  return [new Model2(new ActionLogin(), new None()), none()];
+}
+function feature(_, title, description) {
   return div(
     toList([
-      class$("flex items-start justify-center gap-4 px-2 py-2")
+      class$(
+        "flex w-full items-start justify-center gap-4 px-2 py-2"
+      )
     ]),
     toList([
       div(
@@ -4431,7 +4821,9 @@ function feature(icon_name, title, description) {
         toList([
           span(
             toList([
-              class$("text-heading-3 font-heading-3 text-brand-700")
+              class$(
+                "text-heading-3 font-heading-3 text-brand-700 font-bold"
+              )
             ]),
             toList([text2(title)])
           ),
@@ -4444,17 +4836,32 @@ function feature(icon_name, title, description) {
     ])
   );
 }
-function form_field(label2, value2) {
+function form_fields(model) {
   return div(
-    toList([class$("h-auto w-full flex-none")]),
     toList([
-      div(
-        toList([]),
-        toList([
-          label(toList([]), toList([text2(label2)])),
-          input(toList([value(value2)]))
-        ])
-      )
+      class$("flex w-full flex-col items-start justify-center gap-6")
+    ]),
+    toList([
+      form_field(
+        "Name ",
+        (() => {
+          let _pipe = new$8("", new Noop());
+          let _pipe$1 = with_type(_pipe, new Text2());
+          return with_validation(_pipe$1, new Unset());
+        })()
+      ),
+      (() => {
+        let $ = model.action;
+        if ($ instanceof ActionLogin) {
+          return div(toList([]), toList([]));
+        } else {
+          return form_field(
+            "Email ",
+            email_input("", new Noop())
+          );
+        }
+      })(),
+      form_field("Password ", password_input("", new Noop()))
     ])
   );
 }
@@ -4462,23 +4869,21 @@ function sign_up_card_with_value_props(model) {
   return div(
     toList([
       class$(
-        "flex h-full w-full flex-wrap items-center justify-center gap-12 bg-default-background px-12 py-12 mobile:flex-col mobile:flex-wrap mobile:gap-12 mobile:px-6 mobile:py-12"
+        "flex h-full w-full flex-wrap items-center justify-center gap-12 px-12 py-12 mobile:flex-col mobile:flex-wrap mobile:gap-12 mobile:px-6 mobile:py-12"
       )
     ]),
     toList([
       div(
         toList([
           class$(
-            "max-w-[576px] grow shrink-0 basis-0 flex-col items-center justify-center gap-12 self-stretch mobile:h-auto mobile:w-full mobile:max-w-[576px] mobile:flex-none"
+            "flex max-w-[576px] grow shrink-0 basis-0 flex-col items-center justify-center gap-12 self-stretch mobile:h-auto mobile:w-full mobile:max-w-[576px]"
           )
         ]),
         toList([
           img(
             toList([
-              src(
-                "https://res.cloudinary.com/subframe/image/upload/v1711417518/shared/fdb8rlpzh1gds6vzsnt0.svg"
-              ),
-              class$("h-8 flex-none object-cover")
+              src("/static/m.svg"),
+              class$("h-16 flex-none object-cover")
             ])
           ),
           div(
@@ -4514,57 +4919,77 @@ function sign_up_card_with_value_props(model) {
           )
         ]),
         toList([
-          span(
+          div(
             toList([
               class$(
-                "w-full text-heading-3 font-heading-3 text-default-font"
+                "flex w-full flex-col items-center justify-center gap-8"
               )
             ]),
-            toList([text2("Create your account")])
-          ),
-          form_field("Name ", ""),
-          form_field("Email ", ""),
-          form_field("Password ", ""),
-          button(
-            toList([
-              on_click(
-                new AuthMessage(
-                  (() => {
-                    let $ = model.action;
-                    if ($ instanceof ActionLogin) {
-                      return new Authenticate();
-                    } else {
-                      return new Authenticate();
-                    }
-                  })()
-                )
-              )
-            ]),
-            toList([text2("Create account")])
-          ),
-          div(
-            toList([class$("flex flex-wrap items-start gap-1")]),
             toList([
               span(
                 toList([
-                  class$("text-body font-body text-default-font")
+                  class$(
+                    "w-full text-heading-3 font-heading-3 text-default-font font-bold"
+                  )
                 ]),
                 toList([
                   text2(
                     (() => {
                       let $ = model.action;
                       if ($ instanceof ActionLogin) {
-                        return "No account yet?";
+                        return "Log into your account";
                       } else {
-                        return "Have an account?";
+                        return "Create your account";
                       }
                     })()
                   )
                 ])
               ),
-              a(
+              form_fields(model),
+              (() => {
+                let _pipe = primary(
+                  (() => {
+                    let $ = model.action;
+                    if ($ instanceof ActionLogin) {
+                      return "Sign In";
+                    } else {
+                      return "Sign Up";
+                    }
+                  })(),
+                  new AuthMessage(new Authenticate())
+                );
+                return render(_pipe);
+              })(),
+              div(
+                toList([class$("flex flex-wrap items-start gap-1")]),
                 toList([
-                  on_click(
+                  span(
+                    toList([
+                      class$("text-body font-body text-default-font")
+                    ]),
+                    toList([
+                      text2(
+                        (() => {
+                          let $ = model.action;
+                          if ($ instanceof ActionLogin) {
+                            return "No account yet?";
+                          } else {
+                            return "Have an account?";
+                          }
+                        })()
+                      )
+                    ])
+                  ),
+                  view(
+                    "",
+                    (() => {
+                      let $ = model.action;
+                      if ($ instanceof ActionLogin) {
+                        return "Sign Up";
+                      } else {
+                        return "Sign In";
+                      }
+                    })(),
                     (() => {
                       let $ = model.action;
                       if ($ instanceof ActionLogin) {
@@ -4578,18 +5003,6 @@ function sign_up_card_with_value_props(model) {
                       }
                     })()
                   )
-                ]),
-                toList([
-                  text2(
-                    (() => {
-                      let $ = model.action;
-                      if ($ instanceof ActionLogin) {
-                        return "Sign Up";
-                      } else {
-                        return "Sign In";
-                      }
-                    })()
-                  )
                 ])
               )
             ])
@@ -4599,10 +5012,10 @@ function sign_up_card_with_value_props(model) {
     ])
   );
 }
-function view(model) {
+function view2(model) {
   return sign_up_card_with_value_props(model);
 }
-var query_login = "mutation Login($email: Email!, $password: Password!) {\n  login(request: {email: $email, password: $password}) {\n    name\n    slug\n  }\n}";
+var query_login = "mutation Login($email: Email!, $password: Password!) {\n  login(request: {email: $email, password: $password}) {\n    user {\n      name\n      slug\n    }\n    sessionToken\n  }\n}";
 function login() {
   let res = (() => {
     let _pipe = new$5();
@@ -4634,9 +5047,24 @@ function login() {
       );
     }
   );
+  let auth_decoder = field(
+    "user",
+    user_decoder,
+    (user) => {
+      return field(
+        "sessionToken",
+        string2,
+        (session_token) => {
+          return success(
+            new AuthenticatedUser(user, session_token)
+          );
+        }
+      );
+    }
+  );
   let login_decoder = field(
     "login",
-    user_decoder,
+    auth_decoder,
     (user) => {
       return success(user);
     }
@@ -4718,9 +5146,24 @@ function register() {
       );
     }
   );
+  let auth_decoder = field(
+    "user",
+    user_decoder,
+    (user) => {
+      return field(
+        "sessionToken",
+        string2,
+        (session_token) => {
+          return success(
+            new AuthenticatedUser(user, session_token)
+          );
+        }
+      );
+    }
+  );
   let login_decoder = field(
     "register",
-    user_decoder,
+    auth_decoder,
     (user) => {
       return success(user);
     }
@@ -4759,14 +5202,14 @@ function register() {
 }
 function update(model, msg) {
   if (msg instanceof AuthSwitchAction) {
-    throw makeError(
-      "todo",
-      "ui/auth/auth",
-      149,
-      "update",
-      "`todo` expression evaluated. This code has not yet been implemented.",
-      {}
-    );
+    let action = msg[0];
+    return [
+      (() => {
+        let _record = model;
+        return new Model2(action, _record.current_user);
+      })(),
+      none()
+    ];
   } else if (msg instanceof Authenticate) {
     return [
       model,
@@ -4789,7 +5232,7 @@ function update(model, msg) {
             throw makeError(
               "panic",
               "ui/auth/auth",
-              163,
+              207,
               "",
               "`panic` expression evaluated.",
               {}
@@ -4799,22 +5242,48 @@ function update(model, msg) {
       )
     ];
   } else {
-    throw makeError(
-      "todo",
-      "ui/auth/auth",
-      170,
-      "update",
-      "`todo` expression evaluated. This code has not yet been implemented.",
-      {}
-    );
+    let current_user = msg[0];
+    let $ = (() => {
+      let _pipe = set_token(current_user.session_token);
+      return map_error(
+        _pipe,
+        (_) => {
+          throw makeError(
+            "panic",
+            "ui/auth/auth",
+            217,
+            "",
+            "Failed writing to storage!",
+            {}
+          );
+        }
+      );
+    })();
+    if (!$.isOk()) {
+      throw makeError(
+        "let_assert",
+        "ui/auth/auth",
+        215,
+        "update",
+        "Pattern match failed, no pattern matched the value.",
+        { value: $ }
+      );
+    }
+    return [
+      (() => {
+        let _record = model;
+        return new Model2(_record.action, new Some(current_user.user));
+      })(),
+      replace3("/", new None(), new None())
+    ];
   }
 }
 
 // build/dev/javascript/maillage/model.mjs
 var Model3 = class extends CustomType {
-  constructor(view3, auth_model) {
+  constructor(view4, auth_model) {
     super();
-    this.view = view3;
+    this.view = view4;
     this.auth_model = auth_model;
   }
 };
@@ -4828,14 +5297,6 @@ function on_route_change(uri) {
     return new OnChangeView(new Main());
   }
 }
-function init4(flags) {
-  let $ = init3(flags);
-  let auth_model = $[0];
-  return [
-    new Model3(new Main(), auth_model),
-    init2(on_route_change)
-  ];
-}
 function update2(model, msg) {
   if (msg instanceof OnChangeView) {
     let route = msg.view;
@@ -4846,56 +5307,78 @@ function update2(model, msg) {
       })(),
       none()
     ];
-  } else {
+  } else if (msg instanceof AuthMessage) {
     let auth_msg = msg[0];
-    if (auth_msg instanceof AuthSwitchAction) {
-      let action = auth_msg[0];
-      return [
-        (() => {
-          let _record = model;
-          return new Model3(_record.view, new Model2(action));
-        })(),
-        none()
-      ];
-    } else if (auth_msg instanceof LoginResponse) {
-      let user = auth_msg[0];
-      debug(user);
-      return [
-        (() => {
-          let _record = model;
-          return new Model3(_record.view, _record.auth_model);
-        })(),
-        none()
-      ];
-    } else {
-      let $ = update(model.auth_model, auth_msg);
-      let auth_model = $[0];
-      let ef = $[1];
-      return [
-        (() => {
-          let _record = model;
-          return new Model3(_record.view, auth_model);
-        })(),
-        ef
-      ];
-    }
+    let $ = update(model.auth_model, auth_msg);
+    let auth_model = $[0];
+    let auth_effect = $[1];
+    return [
+      (() => {
+        let _record = model;
+        return new Model3(_record.view, auth_model);
+      })(),
+      auth_effect
+    ];
+  } else {
+    return [
+      (() => {
+        let _record = model;
+        return new Model3(_record.view, _record.auth_model);
+      })(),
+      none()
+    ];
   }
 }
 function view_auth(model) {
-  return view(model.auth_model);
+  return view2(model.auth_model);
 }
-function view_nav(_) {
-  let item_styles = toList([["text-decoration", "underline"]]);
+function layout_empty(child, _) {
+  return div(
+    toList([class$("w-full h-full min-h-screen")]),
+    toList([child])
+  );
+}
+function view_nav(model) {
   let view_nav_item = (path, text3) => {
     return a(
-      toList([href("/" + path), style(item_styles)]),
+      toList([href("/" + path), class$("text-brand-700")]),
       toList([text(text3)])
     );
   };
-  return of(
-    nav,
-    toList([]),
-    toList([view_nav_item("", "Home"), view_nav_item("auth", "Auth")])
+  let nav_items = filter_map(
+    toList([["", "Home"], ["auth", "Auth"]]),
+    (item) => {
+      let $ = item[0];
+      if ($ === "auth") {
+        let $1 = model.auth_model.current_user;
+        if ($1 instanceof Some) {
+          return new Error("");
+        } else {
+          return new Ok(view_nav_item(item[0], item[1]));
+        }
+      } else {
+        return new Ok(view_nav_item(item[0], item[1]));
+      }
+    }
+  );
+  return of(nav, toList([]), nav_items);
+}
+function layout_sidebar(child, model) {
+  return div(
+    toList([class$("w-full h-full min-h-screen text-default-font")]),
+    toList([
+      view_nav(model),
+      child,
+      (() => {
+        let $ = model.auth_model.current_user;
+        if ($ instanceof Some) {
+          let current_user = $[0];
+          return text2("Authenticated: " + current_user.name);
+        } else {
+          return text2("");
+        }
+      })()
+    ])
   );
 }
 function view_body(children2) {
@@ -4907,29 +5390,151 @@ function view_title(text3) {
 function view_home(_) {
   return view_body(toList([view_title("")]));
 }
-function view2(model) {
-  let styles = toList([]);
+function view3(model) {
   let page = (() => {
     let $ = model.view;
     if ($ instanceof Auth) {
-      return view_auth(model);
+      let _pipe = view_auth(model);
+      return layout_empty(_pipe, model);
     } else {
-      return view_home(model);
+      let _pipe = view_home(model);
+      return layout_sidebar(_pipe, model);
     }
   })();
-  return div(
-    toList([style(styles)]),
-    toList([view_nav(model), page])
-  );
+  return page;
+}
+var query_current_user = "query Me {\n  me {\n    name\n    slug\n  }\n}";
+function get_current_user() {
+  let $ = get_token();
+  if ($.isOk()) {
+    let session_token = $[0];
+    let res = (() => {
+      let _pipe = new$5();
+      let _pipe$1 = set_query(_pipe, query_current_user);
+      let _pipe$2 = set_operation_name(_pipe$1, "Me");
+      let _pipe$3 = set_uri(_pipe$2, get_url() + "/graphql");
+      let _pipe$4 = set_header3(
+        _pipe$3,
+        "Content-Type",
+        "application/json"
+      );
+      return set_header3(
+        _pipe$4,
+        "Authorization",
+        "Bearer " + session_token
+      );
+    })();
+    let user_decoder = field(
+      "name",
+      string2,
+      (name) => {
+        return field(
+          "slug",
+          string2,
+          (slug) => {
+            return success(new User(0, name, "", slug));
+          }
+        );
+      }
+    );
+    let login_decoder = field(
+      "me",
+      user_decoder,
+      (user) => {
+        return success(user);
+      }
+    );
+    let final_decoder = field(
+      "data",
+      login_decoder,
+      (login2) => {
+        return success(login2);
+      }
+    );
+    return send3(
+      res,
+      expect_json(
+        (dyn) => {
+          return map_error(
+            run(dyn, final_decoder),
+            (err) => {
+              debug(err);
+              return toList([]);
+            }
+          );
+        },
+        (res2) => {
+          let $1 = (() => {
+            let _pipe = get_token();
+            return map_error(
+              _pipe,
+              (_) => {
+                throw makeError(
+                  "panic",
+                  "maillage",
+                  72,
+                  "",
+                  "Failed getting access to storage!",
+                  {}
+                );
+              }
+            );
+          })();
+          if (!$1.isOk()) {
+            throw makeError(
+              "let_assert",
+              "maillage",
+              69,
+              "",
+              "Pattern match failed, no pattern matched the value.",
+              { value: $1 }
+            );
+          }
+          let session_token$1 = $1[0];
+          if (res2.isOk()) {
+            let user = res2[0];
+            return new AuthMessage(
+              new LoginResponse(
+                new AuthenticatedUser(user, session_token$1)
+              )
+            );
+          } else {
+            let e = res2[0];
+            debug(e);
+            throw makeError(
+              "panic",
+              "maillage",
+              84,
+              "",
+              "`panic` expression evaluated.",
+              {}
+            );
+          }
+        }
+      )
+    );
+  } else {
+    return from((dispatch) => {
+      return dispatch(new Noop());
+    });
+  }
+}
+function init4(flags) {
+  let $ = init3(flags);
+  let auth_model = $[0];
+  return [
+    new Model3(new Main(), auth_model),
+    batch(toList([get_current_user(), init2(on_route_change)]))
+  ];
 }
 function main() {
-  let app = application(init4, update2, view2);
+  let app = application(init4, update2, view3);
   let $ = start2(app, "#app", void 0);
   if (!$.isOk()) {
     throw makeError(
       "let_assert",
       "maillage",
-      20,
+      99,
       "main",
       "Pattern match failed, no pattern matched the value.",
       { value: $ }

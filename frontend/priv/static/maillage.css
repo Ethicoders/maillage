@@ -46,7 +46,7 @@ html,
   -o-tab-size: 4;
      tab-size: 4;
   /* 3 */
-  font-family: ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+  font-family: Inter, ui-sans-serif, system-ui;
   /* 4 */
   font-feature-settings: normal;
   /* 5 */
@@ -135,7 +135,7 @@ code,
 kbd,
 samp,
 pre {
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  font-family: Fira Code, monospace;
   /* 1 */
   font-feature-settings: normal;
   /* 2 */
@@ -544,20 +544,62 @@ video {
   --tw-backdrop-sepia:  ;
 }
 
+.container {
+  width: 100%;
+}
+
+@media (min-width: 640px) {
+  .container {
+    max-width: 640px;
+  }
+}
+
+@media (min-width: 768px) {
+  .container {
+    max-width: 768px;
+  }
+}
+
+@media (min-width: 1024px) {
+  .container {
+    max-width: 1024px;
+  }
+}
+
+@media (min-width: 1280px) {
+  .container {
+    max-width: 1280px;
+  }
+}
+
+@media (min-width: 1536px) {
+  .container {
+    max-width: 1536px;
+  }
+}
+
 .flex {
   display: flex;
+}
+
+.h-10 {
+  height: 2.5rem;
+}
+
+.h-16 {
+  height: 4rem;
 }
 
 .h-8 {
   height: 2rem;
 }
 
-.h-auto {
-  height: auto;
-}
-
 .h-full {
   height: 100%;
+}
+
+.min-h-screen {
+  min-height: 100vh;
 }
 
 .w-full {
@@ -624,6 +666,10 @@ video {
   gap: 1.5rem;
 }
 
+.gap-8 {
+  gap: 2rem;
+}
+
 .self-stretch {
   align-self: stretch;
 }
@@ -640,9 +686,23 @@ video {
   border-style: solid;
 }
 
+.border-neutral-border {
+  --tw-border-opacity: 1;
+  border-color: rgb(55 65 81 / var(--tw-border-opacity));
+}
+
+.bg-brand-700 {
+  --tw-bg-opacity: 1;
+  background-color: rgb(48 164 108 / var(--tw-bg-opacity));
+}
+
 .bg-default-background {
   --tw-bg-opacity: 1;
   background-color: rgb(3 7 18 / var(--tw-bg-opacity));
+}
+
+.bg-transparent {
+  background-color: transparent;
 }
 
 .object-cover {
@@ -670,18 +730,31 @@ video {
   padding-bottom: 0.5rem;
 }
 
+.font-body {
+  font-family: IBM Plex Mono;
+}
+
+.font-heading-3 {
+  font-family: IBM Plex Mono;
+}
+
+.font-bold {
+  font-weight: 700;
+}
+
 .text-brand-700 {
   --tw-text-opacity: 1;
-  color: rgb(24 100 66 / var(--tw-text-opacity));
+  color: rgb(48 164 108 / var(--tw-text-opacity));
+}
+
+.text-default-font {
+  --tw-text-opacity: 1;
+  color: rgb(249 250 251 / var(--tw-text-opacity));
 }
 
 .text-subtext-color {
   --tw-text-opacity: 1;
   color: rgb(156 163 175 / var(--tw-text-opacity));
-}
-
-.underline {
-  text-decoration-line: underline;
 }
 
 .shadow-lg {
@@ -692,4 +765,12 @@ video {
 
 .outline {
   outline-style: solid;
+}
+
+html {
+  min-height: 100%;
+}
+
+body {
+  min-height: 100%;
 }

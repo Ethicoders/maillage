@@ -7,6 +7,6 @@ pub type Action {
 
 pub type Msg {
   AuthSwitchAction(Action)
-  LoginResponse(user.User)
+  LoginResponse(user.AuthenticatedUser)
   Authenticate
 }

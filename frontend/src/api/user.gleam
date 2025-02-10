@@ -8,3 +8,7 @@ pub type User {
     // updated: birl.Time,
   )
 }
+
+pub type AuthenticatedUser {
+  AuthenticatedUser(user: User, session_token: String)
+}

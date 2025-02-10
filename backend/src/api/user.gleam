@@ -1,10 +1,17 @@
+import api/common
 import core/user as core_user
 import db/db
 import db/user
+import gleam/dict.{type Dict}
+import gleam/http/request
+import gleam/int
 import gleam/io
 import gleam/javascript/promise
+import gleam/option
 import gleam/result
 import graphql
+import gwt
+import helpers
 import pog
 import types/email.{type Email}
 import types/password as types_password
@@ -20,8 +27,27 @@ pub type User {
   )
 }
 
+pub type AuthenticatedUser {
+  AuthenticatedUser(user: User, session_token: String)
+}
+
+pub type WithResponseHeaders(h, p) {
+  WithResponseHeaders(headers: h, payload: p)
+}
+
 pub type RegisterRequest {
   RegisterRequest(name: String, email: Email, password: types_password.Password)
+}
+
+pub fn get_current_user(_, _, ctx: graphql.Context) {
+  io.debug(ctx)
+  use found_user <- promise.map_try(common.get_authenticated_user(ctx.request))
+  Ok(User(
+    id: found_user.id.value,
+    name: found_user.name,
+    email: found_user.email,
+    slug: found_user.slug,
+  ))
 }
 
 pub fn register(
@@ -80,12 +106,25 @@ pub type LoginRequest {
 pub fn login(
   _,
   variables: graphql.Variables(LoginRequest),
-  _ctx,
-) -> promise.Promise(Result(User, String)) {
+  _ctx: graphql.Context,
+) -> promise.Promise(Result(AuthenticatedUser, String)) {
   let email = variables.request.email
   let password = variables.request.password
 
   use res <- promise.map(core_user.login(email, password))
   use item <- result.map(res)
-  User(id: item.id.value, name: item.name, email: item.email, slug: item.slug)
+
+  let jwt_string =
+    gwt.new()
+    |> gwt.set_subject(int.to_string(item.id.value))
+    |> gwt.set_audience("0987654321")
+    |> gwt.set_not_before(1_704_043_160)
+    |> gwt.set_expiration(1_704_046_160)
+    |> gwt.set_jwt_id("2468")
+    |> gwt.to_string()
+
+  AuthenticatedUser(
+    User(id: item.id.value, name: item.name, email: item.email, slug: item.slug),
+    jwt_string,
+  )
 }

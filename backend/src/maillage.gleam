@@ -10,6 +10,7 @@ import glen.{type Request, type Response}
 import glen/status
 import glen/ws
 import graphql
+import helpers
 import repeatedly
 import types/email
 
@@ -21,18 +22,22 @@ import api/post as api_post
 import api/user as api_user
 import core/user as core_user
 
-pub type Query(a) {
-  Hello(value: fn(a, graphql.Variables(Nil), graphql.Context) -> String)
+pub type Queries(a) {
+  Me(
+    value: fn(a, graphql.Variables(Nil), graphql.Context) ->
+      promise.Promise(Result(api_user.User, String)),
+  )
 }
 
 pub type Mutations(a) {
+
   Register(
     value: fn(a, graphql.Variables(api_user.RegisterRequest), graphql.Context) ->
       promise.Promise(Result(api_user.User, String)),
   )
   Login(
     value: fn(a, graphql.Variables(api_user.LoginRequest), graphql.Context) ->
-      promise.Promise(Result(api_user.User, String)),
+      promise.Promise(Result(api_user.AuthenticatedUser, String)),
   )
   CreatePost(
     value: fn(a, graphql.Variables(api_post.CreatePostRequest), graphql.Context) ->
@@ -48,42 +53,39 @@ pub type Scalars {
 @external(javascript, "./graphql.js", "serve")
 pub fn serve(
   type_string: String,
-  query_resolvers: Dict(String, Query(f)),
+  query_resolvers: Dict(String, Queries(f)),
   mutation_resolvers: Dict(String, Mutations(f)),
   other_resolvers: Dict(String, Scalars),
   // other_resolvers: Dict(String, fn(v) -> o),
 ) -> a
 
-@external(javascript, "./graphql.js", "generateSessionToken")
-fn generate_session_token(length: Int) -> String
-
-fn hello(_, _vars, _ctx) -> String {
-  "Hello, World!!!"
-}
-
 pub fn main() {
   let type_string =
-    "type Query {
-      hello: String
-    }
-scalar Email
+    "
+  scalar Email
 
-scalar Password
+  scalar Password
 
-    type User {name: String!, slug: String!}
-    type Post {content: String!, author: Int!}
+  type User {name: String!, slug: String!}
+  type Post {content: String!, author: Int!}
+  type AuthenticatedUser {user: User!, sessionToken: String!}
     
   input RegisterRequest {name: String!, email: Email!, password: Password!}
   input LoginRequest {email: Email!, password: Password!}
   input CreatePostRequest {content: String!}
 
-    type Mutation {
-      register(request: RegisterRequest!): User
-      login(request: LoginRequest!): User
-      createPost(request: CreatePostRequest!): Post
-    }"
+  type Query {
+    me: User
+  }
 
-  let query_resolvers = dict.new() |> dict.insert("hello", Hello(hello))
+  type Mutation {
+    register(request: RegisterRequest!): User
+    login(request: LoginRequest!): AuthenticatedUser
+    createPost(request: CreatePostRequest!): Post
+  }"
+
+  let query_resolvers =
+    dict.new() |> dict.insert("me", Me(api_user.get_current_user))
   let mutation_resolvers =
     dict.new()
     |> dict.insert("register", Register(api_user.register))
@@ -94,18 +96,6 @@ scalar Password
     |> dict.insert("Email", Email(api_email.validate))
     |> dict.insert("Password", Password(api_password.validate))
   serve(type_string, query_resolvers, mutation_resolvers, other_resolvers)
-}
-
-fn handle_result(
-  target: Result(Promise(Response), Promise(String)),
-) -> Promise(Response) {
-  case target {
-    Ok(p) -> p
-    Error(p) -> {
-      use error <- promise.map(p)
-      glen.json(error, 500)
-    }
-  }
 }
 
 pub fn handle_req(req: Request) -> Promise(Response) {
@@ -156,7 +146,7 @@ fn login(req: Request) -> Promise(Response) {
                   promise.map(core_user.login(email, password), fn(user_result) {
                     case user_result {
                       Ok(found_user) -> {
-                        let token = generate_session_token(32)
+                        let token = helpers.generate_session_token(32)
 
                         glen.json(
                           json.to_string(
@@ -177,16 +167,16 @@ fn login(req: Request) -> Promise(Response) {
                   })
                 }
 
-                Error(e) -> panic
+                Error(_e) -> panic
               }
             }
-            Error(e) -> panic
+            Error(_e) -> panic
           }
         }
-        Error(e) -> panic
+        Error(_e) -> panic
       }
     }
-    Error(e) -> panic
+    Error(_e) -> panic
   }
   out
 }

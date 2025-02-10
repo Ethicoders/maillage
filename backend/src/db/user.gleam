@@ -91,16 +91,16 @@ pub fn create(
 
 pub fn get_by_id(
   conn: Connection,
-  id: UserId,
+  id: Int,
 ) -> promise.Promise(Result(Option(User), pog.QueryError)) {
   let sql =
     "
     SELECT
         id,
-        email_address,
-        password_digest,
-        created_at::text
-    FROM user
+        name,
+        slug,
+        email
+    FROM public.user
     WHERE id = $1
   "
 
@@ -110,7 +110,7 @@ pub fn get_by_id(
 
   let query =
     pog.query(sql)
-    |> pog.parameter(pog.int(id.value))
+    |> pog.parameter(pog.int(id))
     |> pog.returning(decode_user_sql())
 
   use outcome <- promise.map_try(pog.execute(query, conn))
@@ -208,6 +208,37 @@ pub fn get_by_session_token(
   let query =
     pog.query(sql)
     |> pog.parameter(session_token |> pog.text())
+    |> pog.returning(decode_user_sql())
+
+  use outcome <- promise.map_try(pog.execute(query, conn))
+
+  case outcome.rows {
+    [] -> Ok(None)
+    [user] -> Ok(Some(user))
+    _ -> panic as "Unreachable"
+  }
+}
+
+pub fn set_session_token(
+  conn: Connection,
+  user_id,
+  session_token: String,
+) -> promise.Promise(Result(Option(User), pog.QueryError)) {
+  let sql =
+    "
+    UPDATE public.user
+    SET session_token = $1
+    WHERE id = $2
+    RETURNING id,
+        name,
+        email,
+        slug;
+  "
+
+  let query =
+    pog.query(sql)
+    |> pog.parameter(session_token |> pog.text())
+    |> pog.parameter(user_id |> pog.int())
     |> pog.returning(decode_user_sql())
 
   use outcome <- promise.map_try(pog.execute(query, conn))

@@ -21,8 +21,6 @@ const dictToObject = (dict) => {
 };
 
 const handleResolverResponse = (resolver) => async (one, two, ctx) => {
-  console.log(ctx);
-
   const result = await resolver(one, two, {
     request: glen.convert_request(ctx.request),
   });
@@ -30,11 +28,32 @@ const handleResolverResponse = (resolver) => async (one, two, ctx) => {
   if (result instanceof ResultError) {
     return new Error(result[0]);
   } else if (result instanceof Ok) {
-    return result[0];
+    return snakeToCamelCase(result[0]);
   }
-  return result;
+  return snakeToCamelCase(result);
 };
 
+
+const snakeToCamelCase = (obj) => {
+  if (typeof obj !== 'object' || obj === null) {
+    return obj;
+  }
+
+  if (Array.isArray(obj)) {
+    return obj.map(snakeToCamelCase);
+  }
+
+  const newObj = {};
+  for (const key in obj) {
+    if (Object.prototype.hasOwnProperty.call(obj, key)) {
+      const camelKey = key.replace(/([-_][a-z])/gi, ($1) => {
+        return $1.toUpperCase().replace('-', '').replace('_', '');
+      });
+      newObj[camelKey] = snakeToCamelCase(obj[key]);
+    }
+  }
+  return newObj;
+}
 export const getHandler = (
   typeString,
   queryResolvers,
@@ -53,7 +72,7 @@ export const getHandler = (
           name: key,
           serialize(value) {
             console.log("serialize", value);
-            
+
             return fn(value);
           },
           parseValue(value) {
@@ -61,7 +80,7 @@ export const getHandler = (
             if (out instanceof Ok) {
               return out["0"];
             }
-            
+
             return out;
           },
           parseLiteral(ast) {
@@ -97,6 +116,7 @@ export const getHandler = (
   return (request) =>
     GraphQLHTTP({
       schema,
+      headers: {"test": "test"},
       graphiql: true,
     })(request);
 };
@@ -108,7 +128,8 @@ const applyCORSHeaders = (headers, origin) => {
     "Access-Control-Allow-Origin": isDev() ? origin : "TBD",
     "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
     "Access-Control-Allow-Credentials": true,
-    "Access-Control-Allow-Headers": "Content-Type, Authorization, Set-Cookie, Priority",
+    "Access-Control-Allow-Headers":
+      "Content-Type, Authorization, Set-Cookie, Priority",
     "Access-Control-Expose-Headers": "Set-Cookie",
   };
   for (const i in corsHeaders) {
@@ -147,8 +168,7 @@ export const serve = (
       const { pathname } = new URL(request.url);
       const clone = request.clone();
 
-          console.log(request);
-          let body;
+      let body;
       try {
         body = await clone.json();
 
@@ -158,16 +178,12 @@ export const serve = (
         }
       } catch (error) {}
 
-      // request.bodyUsed = false;
       if (pathname === "/graphql") {
         // Preflight case
         if (request.method === "OPTIONS") {
           const response = new Response(null);
-          
-          applyCORSHeaders(
-            response.headers,
-            "http://localhost:8080"
-          );
+
+          applyCORSHeaders(response.headers, "http://localhost:8080");
 
           return response;
         }
@@ -179,23 +195,12 @@ export const serve = (
           const result = await clone.json();
           if (isDev() && body?.operationName !== "IntrospectionQuery") {
             console.log("Outgoing response", result);
+            console.log(response);
+            
           }
 
           applyCORSHeaders(response.headers, "http://localhost:8080");
-          if ("login" in result?.data) {
-            response.headers.set(
-              "Set-Cookie",
-              `msess=${generateSessionToken(
-                32
-              )}; Path=/; HttpOnly; SameSite=None; Secure=false`
-            );
 
-            // response.headers.set(
-            //   "Set-Cookie",
-            //   "msess=token; HttpOnly; Secure; SameSite=Strict"
-            // );
-            console.log(response);
-          }
         } catch (error) {}
 
         return response;
