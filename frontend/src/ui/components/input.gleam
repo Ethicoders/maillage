@@ -1,5 +1,5 @@
 import lustre/attribute
-import lustre/element
+import lustre/element.{type Element}
 import lustre/element/html
 
 pub opaque type Input(input_type, validation, msg) {
@@ -48,7 +48,7 @@ pub fn with_validation(
   Input(..input, validation: validation)
 }
 
-pub fn render(input: Input(Type, Validation, a)) -> element.Element(a) {
+fn render(input: Input(Type, Validation, a)) -> Element(a) {
   let type_attr = case input.input_type {
     Text -> "text"
     Password -> "password"
@@ -64,20 +64,23 @@ pub fn render(input: Input(Type, Validation, a)) -> element.Element(a) {
   ])
 }
 
-pub fn email_input(
-  placeholder: String,
-  on_input: msg,
-) -> Input(Type, Validation, msg) {
+pub fn text_input(placeholder: String, on_input: msg) -> Element(msg) {
+  new(placeholder, on_input)
+  |> with_type(Text)
+  |> with_validation(Unset)
+  |> render
+}
+
+pub fn email_input(placeholder: String, on_input: msg) -> Element(msg) {
   new(placeholder, on_input)
   |> with_type(Email)
   |> with_validation(Unset)
+  |> render
 }
 
-pub fn password_input(
-  placeholder: String,
-  on_input: msg,
-) -> Input(Type, Validation, msg) {
+pub fn password_input(placeholder: String, on_input: msg) -> Element(msg) {
   new(placeholder, on_input)
   |> with_type(Password)
   |> with_validation(Unset)
+  |> render
 }

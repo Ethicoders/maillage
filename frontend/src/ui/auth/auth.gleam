@@ -303,8 +303,7 @@ pub fn sign_up_card_with_value_props(model: Model) {
                   ActionRegister -> "Sign Up"
                 },
                 shared.AuthMessage(Authenticate),
-              )
-                |> button.render(),
+              ),
               html.div([attribute.class("flex flex-wrap items-start gap-1")], [
                 html.span(
                   [attribute.class("text-body font-body text-default-font")],
@@ -363,12 +362,7 @@ fn form_fields(model: Model) {
   html.div(
     [attribute.class("flex w-full flex-col items-start justify-center gap-6")],
     [
-      form_field(
-        "Name ",
-        input.new("", shared.Noop)
-          |> input.with_type(input.Text)
-          |> input.with_validation(input.Unset),
-      ),
+      form_field("Name ", input.text_input("", shared.Noop)),
       case model.action {
         ActionLogin -> html.div([], [])
         ActionRegister ->

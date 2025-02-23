@@ -1,11 +1,8 @@
 import lustre/attribute
+import lustre/element.{type Element}
 import lustre/element/html
-import ui/components/input
 
-pub fn form_field(
-  label: String,
-  field: input.Input(input.Type, input.Validation, a),
-) {
+pub fn form_field(label: String, field: Element(a)) {
   html.div(
     [
       // html.attr("data-selectable-node-ids", "9fb93c54-68ef-5edd-82e7-45eb1d6a2d83 6a2f48cf-31dc-4134-bc2d-56fef17494a7"),
@@ -42,7 +39,7 @@ pub fn form_field(
               // input.attr("draggable", "false"),
               // input.attr("type", "text"),
               // input.attr("readonly", ""),
-              field |> input.render(),
+              field,
               //   html.input([attribute.placeholder(placeholder)]),
             ],
           ),

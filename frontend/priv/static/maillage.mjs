@@ -4640,7 +4640,29 @@ function render(button2) {
 function primary(label, msg) {
   let _pipe = new$7(label, msg);
   let _pipe$1 = with_outline(_pipe, new None3());
-  return with_color(_pipe$1, new Primary());
+  let _pipe$2 = with_color(_pipe$1, new Primary());
+  return render(_pipe$2);
+}
+
+// build/dev/javascript/maillage/ui/components/field.mjs
+function form_field(label, field3) {
+  return div(
+    toList([class$("w-full")]),
+    toList([
+      span(
+        toList([class$("text-default-font")]),
+        toList([text2(label)])
+      ),
+      div(
+        toList([
+          class$(
+            "rounded-md border border-solid border-neutral-border"
+          )
+        ]),
+        toList([div(toList([]), toList([field3]))])
+      )
+    ])
+  );
 }
 
 // build/dev/javascript/maillage/ui/components/input.mjs
@@ -4707,46 +4729,23 @@ function render2(input2) {
     ])
   );
 }
+function text_input(placeholder2, on_input) {
+  let _pipe = new$8(placeholder2, on_input);
+  let _pipe$1 = with_type(_pipe, new Text2());
+  let _pipe$2 = with_validation(_pipe$1, new Unset());
+  return render2(_pipe$2);
+}
 function email_input(placeholder2, on_input) {
   let _pipe = new$8(placeholder2, on_input);
   let _pipe$1 = with_type(_pipe, new Email());
-  return with_validation(_pipe$1, new Unset());
+  let _pipe$2 = with_validation(_pipe$1, new Unset());
+  return render2(_pipe$2);
 }
 function password_input(placeholder2, on_input) {
   let _pipe = new$8(placeholder2, on_input);
   let _pipe$1 = with_type(_pipe, new Password());
-  return with_validation(_pipe$1, new Unset());
-}
-
-// build/dev/javascript/maillage/ui/components/field.mjs
-function form_field(label, field3) {
-  return div(
-    toList([class$("w-full")]),
-    toList([
-      span(
-        toList([class$("text-default-font")]),
-        toList([text2(label)])
-      ),
-      div(
-        toList([
-          class$(
-            "rounded-md border border-solid border-neutral-border"
-          )
-        ]),
-        toList([
-          div(
-            toList([]),
-            toList([
-              (() => {
-                let _pipe = field3;
-                return render2(_pipe);
-              })()
-            ])
-          )
-        ])
-      )
-    ])
-  );
+  let _pipe$2 = with_validation(_pipe$1, new Unset());
+  return render2(_pipe$2);
 }
 
 // build/dev/javascript/maillage/ui/components/link.mjs
@@ -4842,14 +4841,7 @@ function form_fields(model) {
       class$("flex w-full flex-col items-start justify-center gap-6")
     ]),
     toList([
-      form_field(
-        "Name ",
-        (() => {
-          let _pipe = new$8("", new Noop());
-          let _pipe$1 = with_type(_pipe, new Text2());
-          return with_validation(_pipe$1, new Unset());
-        })()
-      ),
+      form_field("Name ", text_input("", new Noop())),
       (() => {
         let $ = model.action;
         if ($ instanceof ActionLogin) {
@@ -4946,20 +4938,17 @@ function sign_up_card_with_value_props(model) {
                 ])
               ),
               form_fields(model),
-              (() => {
-                let _pipe = primary(
-                  (() => {
-                    let $ = model.action;
-                    if ($ instanceof ActionLogin) {
-                      return "Sign In";
-                    } else {
-                      return "Sign Up";
-                    }
-                  })(),
-                  new AuthMessage(new Authenticate())
-                );
-                return render(_pipe);
-              })(),
+              primary(
+                (() => {
+                  let $ = model.action;
+                  if ($ instanceof ActionLogin) {
+                    return "Sign In";
+                  } else {
+                    return "Sign Up";
+                  }
+                })(),
+                new AuthMessage(new Authenticate())
+              ),
               div(
                 toList([class$("flex flex-wrap items-start gap-1")]),
                 toList([

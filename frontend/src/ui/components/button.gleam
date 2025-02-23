@@ -1,5 +1,5 @@
 import lustre/attribute
-import lustre/element
+import lustre/element.{type Element}
 import lustre/element/html
 import lustre/event
 import ui/color.{type Color}
@@ -30,8 +30,7 @@ pub fn with_color(button: Button(a, b, c), color: Color) -> Button(a, color, c) 
   Button(..button, color: color)
 }
 
-// @TODO: Output the correct classes
-pub fn render(button: Button(Outline, Color, a)) -> element.Element(a) {
+fn render(button: Button(Outline, Color, a)) -> element.Element(a) {
   let bg = case button.color {
     color.Primary -> "bg-brand-700"
     color.Secondary -> ""
@@ -52,10 +51,10 @@ pub fn render(button: Button(Outline, Color, a)) -> element.Element(a) {
   )
 }
 
-pub fn primary(label: String, msg) -> Button(Outline, Color, msg) {
-  new(label, msg) |> with_outline(None) |> with_color(color.Primary)
+pub fn primary(label: String, msg) -> Element(d) {
+  new(label, msg) |> with_outline(None) |> with_color(color.Primary) |> render
 }
 
-pub fn secondary(label: String, msg) -> Button(Outline, Color, msg) {
-  new(label, msg) |> with_outline(None) |> with_color(color.Secondary)
+pub fn secondary(label: String, msg) -> Element(d) {
+  new(label, msg) |> with_outline(None) |> with_color(color.Secondary) |> render
 }
