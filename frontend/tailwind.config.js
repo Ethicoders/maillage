@@ -28,6 +28,7 @@ module.exports = {
         label: ["IBM Plex Mono"],
         "heading-3": ["IBM Plex Mono"],
         body: ["IBM Plex Mono"],
+        caption: ["IBM Plex Mono"],
       },
       colors: {
         "default-font": "#f9fafb",

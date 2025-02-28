@@ -30,7 +30,10 @@ pub fn with_color(button: Button(a, b, c), color: Color) -> Button(a, color, c) 
   Button(..button, color: color)
 }
 
-fn render(button: Button(Outline, Color, a)) -> element.Element(a) {
+fn render(
+  button: Button(Outline, Color, a),
+  classes: String,
+) -> element.Element(a) {
   let bg = case button.color {
     color.Primary -> "bg-brand-700"
     color.Secondary -> ""
@@ -44,17 +47,25 @@ fn render(button: Button(Outline, Color, a)) -> element.Element(a) {
 
   html.button(
     [
-      attribute.class(bg <> " " <> fg <> " rounded-md h-10 w-full flex-none"),
+      attribute.class(
+        bg <> " " <> fg <> " rounded-md h-10 flex-none" <> " " <> classes,
+      ),
       event.on_click(button.msg),
     ],
     [html.text(button.label)],
   )
 }
 
-pub fn primary(label: String, msg) -> Element(d) {
-  new(label, msg) |> with_outline(None) |> with_color(color.Primary) |> render
+pub fn primary(label: String, classes: String, msg) -> Element(d) {
+  new(label, msg)
+  |> with_outline(None)
+  |> with_color(color.Primary)
+  |> render(classes)
 }
 
-pub fn secondary(label: String, msg) -> Element(d) {
-  new(label, msg) |> with_outline(None) |> with_color(color.Secondary) |> render
+pub fn secondary(label: String, classes: String, msg) -> Element(d) {
+  new(label, msg)
+  |> with_outline(None)
+  |> with_color(color.Secondary)
+  |> render(classes)
 }

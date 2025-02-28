@@ -239,7 +239,7 @@ pub fn sign_up_card_with_value_props(model: Model) {
         ],
         [
           html.img([
-            attribute.src("/static/m.svg"),
+            attribute.src("/static/images/m.svg"),
             attribute.class("h-16 flex-none object-cover"),
           ]),
           //   logo.view([attribute.class("h-8 flex-none object-cover")], None, None),
@@ -302,6 +302,7 @@ pub fn sign_up_card_with_value_props(model: Model) {
                   ActionLogin -> "Sign In"
                   ActionRegister -> "Sign Up"
                 },
+                "w-full",
                 shared.AuthMessage(Authenticate),
               ),
               html.div([attribute.class("flex flex-wrap items-start gap-1")], [

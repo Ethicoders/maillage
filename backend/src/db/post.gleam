@@ -1,7 +1,7 @@
 import gleam/dynamic/decode.{type Decoder}
 import gleam/javascript/promise
 import gleam/list
-import pog
+import pog.{type Connection}
 
 pub type PostId {
   PostId(value: Int)
@@ -50,4 +50,25 @@ pub fn create(conn: pog.Connection, content: String, user_id: Int) {
   let assert Ok(user) = list.first(outcome.rows)
 
   Ok(user)
+}
+
+pub fn get_many(
+  conn: Connection,
+) -> promise.Promise(Result(List(Post), pog.QueryError)) {
+  let sql =
+    "
+    SELECT
+        id,
+        content,
+        user_id
+    FROM public.post
+  "
+
+  let query =
+    pog.query(sql)
+    |> pog.returning(decode_post_sql())
+
+  use outcome <- promise.map_try(pog.execute(query, conn))
+
+  Ok(outcome.rows)
 }

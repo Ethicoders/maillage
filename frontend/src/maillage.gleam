@@ -12,12 +12,15 @@ import lustre/attribute
 import lustre/effect.{type Effect}
 import lustre/element.{type Element}
 import lustre/element/html
+import lustre/element/svg
 import lustre/ui/cluster
 import lustre_http
 import model.{type Model, Model}
 import modem
 import shared.{type Msg, AuthMessage, Noop, OnChangeView}
 import ui/auth/msg
+import ui/components/logo
+import ui/feed/feed
 
 import ui/auth/auth
 
@@ -103,9 +106,10 @@ pub fn main() {
 
 fn init(flags) -> #(Model, Effect(Msg)) {
   let #(auth_model, _effect) = auth.init(flags)
+  let #(feed_model, _effect) = feed.init(flags)
 
   #(
-    Model(auth_model:, view: shared.Main),
+    Model(auth_model:, feed_model:, view: shared.Main),
     effect.batch([get_current_user(), modem.init(on_route_change)]),
   )
 }
@@ -135,7 +139,7 @@ fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
 fn view(model: Model) -> Element(Msg) {
   let page = case model.view {
     shared.Auth -> view_auth(model) |> layout_empty(model)
-    shared.Main -> view_home(model) |> layout_sidebar(model)
+    shared.Main -> view_feed(model) |> layout_sidebar(model)
   }
 
   page
@@ -143,6 +147,10 @@ fn view(model: Model) -> Element(Msg) {
 
 fn view_home(_model: Model) {
   view_body([view_title("")])
+}
+
+fn view_feed(model: Model) {
+  feed.view(model.feed_model)
 }
 
 fn view_auth(model: Model) {
@@ -154,14 +162,155 @@ fn layout_empty(child: Element(Msg), _model: Model) {
 }
 
 fn layout_sidebar(child: Element(Msg), model: Model) {
-  html.div([attribute.class("w-full h-full min-h-screen text-default-font")], [
-    view_nav(model),
-    child,
-    case model.auth_model.current_user {
-      option.Some(current_user) ->
-        html.text("Authenticated: " <> current_user.name)
-      option.None -> html.text("")
-    },
+  html.div(
+    [attribute.class("w-full h-full min-h-screen text-default-font flex")],
+    [
+      // view_nav(model),
+      sidebar(),
+      case model.auth_model.current_user {
+        option.Some(current_user) -> html.text("Auth")
+        // html.text("Authenticated: " <> current_user.name)
+        option.None -> html.text("")
+      },
+      html.div(
+        [attribute.class("flex flex-col items-start gap-4 self-stretch flex-1")],
+        [child],
+      ),
+    ],
+  )
+}
+
+pub fn sidebar() {
+  html.div(
+    [
+      attribute.class(
+        "sc-keTIit _reset_2qoun_1 sc-ovuCP lhPKPj flex w-20 flex-none flex-col items-start self-stretch bg-[--49e8e4fd-73fb-457b-ae9a-59c2d60e53ae]
+",
+      ),
+      // attribute.draggable(false),
+    ],
+    [
+      html.div(
+        [
+          attribute.class(
+            "sc-keTIit _reset_2qoun_1 flex flex-col items-center justify-center gap-2 p-6 w-full",
+          ),
+        ],
+        [
+          html.div([attribute.class("sc-keTIit inGEUB _reset_2qoun_1")], [
+            logo.view(
+              [
+                attribute.attribute("width", "50"),
+                attribute.attribute("height", "50"),
+              ],
+              option.None,
+              option.None,
+            ),
+          ]),
+        ],
+      ),
+      html.div(
+        [attribute.class("flex flex-col items-center gap-1 p-2 w-full flex-1")],
+        [
+          navigation_item(
+            "Home",
+            [
+              svg.path([
+                attribute.attribute(
+                  "d",
+                  "m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z",
+                ),
+              ]),
+              svg.polyline([
+                attribute.attribute("points", "9 22 9 12 15 12 15 22"),
+              ]),
+            ],
+            "9 22V12H15V22",
+          ),
+          navigation_item(
+            "Inbox",
+            [
+              svg.polyline([
+                attribute.attribute(
+                  "points",
+                  "22 12 16 12 14 15 10 15 8 12 2 12",
+                ),
+              ]),
+              svg.path([
+                attribute.attribute(
+                  "d",
+                  "M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z",
+                ),
+              ]),
+            ],
+            "22 12H16L14 15H10L8 12H2",
+          ),
+        ],
+      ),
+      // user_avatar(
+    //   "https://res.cloudinary.com/subframe/image/upload/v1711417507/shared/fychrij7dzl8wgq2zjq9.avif",
+    // ),
+    ],
+  )
+}
+
+fn navigation_item(label: String, paths: List(Element(b)), path2: String) {
+  html.div(
+    [
+      // flex min-h-[48px] flex-col items-center justify-center gap-2 w-full p-[12px_8px_8px] bg-[--baf728fb-606a-51dd-a86c-7cb957e2e7bb] rounded-[--05ebad98-ce65-4785-9582-ebf66b8f5bf4]
+
+      attribute.class(
+        "sc-keTIit _reset_2qoun_1 sc-ovuCP lhPKPj _cursorPointer_1ca4c_1 flex min-h-[48px] flex-col items-center justify-center gap-2 w-full p-[12px_8px_8px] rounded-[--05ebad98-ce65-4785-9582-ebf66b8f5bf4]",
+      ),
+      // attribute.draggable(false),
+    // attribute.data("state", "closed")
+    ],
+    [
+      html.span([attribute.class("sc-ghWlax gLamcN icon-module_root__7C4BA")], [
+        // html.img([attribute.src("/static/images/" <> icon <> ".svg")]),
+        html.svg(
+          [
+            attribute.attribute("xmlns", "http://www.w3.org/2000/svg"),
+            // attribute.attribute("xmlns:xlink", "http://www.w3.org/1999/xlink"),
+            attribute.attribute("width", "1em"),
+            attribute.attribute("height", "1em"),
+            attribute.attribute("viewBox", "0 0 24 24"),
+            attribute.attribute("fill", "none"),
+            attribute.attribute("stroke", "currentColor"),
+            attribute.attribute("stroke-width", "2"),
+            attribute.attribute("stroke-linecap", "round"),
+            attribute.attribute("stroke-linejoin", "round"),
+          ],
+          paths,
+        ),
+      ]),
+      html.span([attribute.class("sc-cEzcPc dEBkIT _reset_2qoun_1 font-body")], [
+        html.text(label),
+      ]),
+    ],
+  )
+}
+
+fn user_avatar(image_url: String) {
+  html.div([attribute.class("sc-keTIit ijkSWb _reset_2qoun_1")], [
+    html.div(
+      [
+        attribute.class(
+          "sc-keTIit iKTkoW _reset_2qoun_1 sc-ovuCP lhPKPj sf-relative",
+        ),
+        // attribute.draggable(false),
+        // attribute.data("state", "closed"),
+        attribute.id("radix-:r40:"),
+        // attribute.aria("haspopup", "menu"),
+      // attribute.aria("expanded", "false")
+      ],
+      [
+        html.img([
+          attribute.class("sc-kLhKbu fdbwju _reset_2qoun_1 sf-absolute"),
+          attribute.src(image_url),
+        ]),
+      ],
+    ),
   ])
 }
 

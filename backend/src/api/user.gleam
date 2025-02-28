@@ -2,16 +2,12 @@ import api/common
 import core/user as core_user
 import db/db
 import db/user
-import gleam/dict.{type Dict}
-import gleam/http/request
 import gleam/int
 import gleam/io
 import gleam/javascript/promise
-import gleam/option
 import gleam/result
 import graphql
 import gwt
-import helpers
 import pog
 import types/email.{type Email}
 import types/password as types_password

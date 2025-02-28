@@ -165,12 +165,12 @@ function byteArrayToInt(byteArray, start3, end, isBigEndian, isSigned) {
   }
 }
 function byteArrayToFloat(byteArray, start3, end, isBigEndian) {
-  const view4 = new DataView(byteArray.buffer);
+  const view8 = new DataView(byteArray.buffer);
   const byteSize = end - start3;
   if (byteSize === 8) {
-    return view4.getFloat64(start3, !isBigEndian);
+    return view8.getFloat64(start3, !isBigEndian);
   } else if (byteSize === 4) {
-    return view4.getFloat32(start3, !isBigEndian);
+    return view8.getFloat32(start3, !isBigEndian);
   } else {
     const msg = `Sized floats must be 32-bit or 64-bit on JavaScript, got size of ${byteSize * 8} bits`;
     throw new globalThis.Error(msg);
@@ -360,34 +360,6 @@ function reverse_loop(loop$remaining, loop$accumulator) {
 }
 function reverse(list2) {
   return reverse_loop(list2, toList([]));
-}
-function filter_map_loop(loop$list, loop$fun, loop$acc) {
-  while (true) {
-    let list2 = loop$list;
-    let fun = loop$fun;
-    let acc = loop$acc;
-    if (list2.hasLength(0)) {
-      return reverse(acc);
-    } else {
-      let first$1 = list2.head;
-      let rest$1 = list2.tail;
-      let new_acc = (() => {
-        let $ = fun(first$1);
-        if ($.isOk()) {
-          let first$2 = $[0];
-          return prepend(first$2, acc);
-        } else {
-          return acc;
-        }
-      })();
-      loop$list = rest$1;
-      loop$fun = fun;
-      loop$acc = new_acc;
-    }
-  }
-}
-function filter_map(list2, fun) {
-  return filter_map_loop(list2, fun, toList([]));
 }
 function map_loop(loop$list, loop$fun, loop$acc) {
   while (true) {
@@ -1549,11 +1521,11 @@ function string(data) {
 
 // build/dev/javascript/gleam_stdlib/gleam/dynamic/decode.mjs
 var DecodeError2 = class extends CustomType {
-  constructor(expected, found, path) {
+  constructor(expected, found, path2) {
     super();
     this.expected = expected;
     this.found = found;
-    this.path = path;
+    this.path = path2;
   }
 };
 var Decoder = class extends CustomType {
@@ -1645,7 +1617,7 @@ function decode_string2(data) {
   return run_dynamic_function(data, "String", string);
 }
 var string2 = /* @__PURE__ */ new Decoder(decode_string2);
-function push_path(layer, path) {
+function push_path(layer, path2) {
   let decoder = one_of(
     string2,
     toList([
@@ -1656,7 +1628,7 @@ function push_path(layer, path) {
     ])
   );
   let path$1 = map(
-    path,
+    path2,
     (key2) => {
       let key$1 = identity(key2);
       let $ = run(key$1, decoder);
@@ -1683,17 +1655,17 @@ function push_path(layer, path) {
 }
 function index3(loop$path, loop$position, loop$inner, loop$data, loop$handle_miss) {
   while (true) {
-    let path = loop$path;
+    let path2 = loop$path;
     let position = loop$position;
     let inner = loop$inner;
     let data = loop$data;
     let handle_miss = loop$handle_miss;
-    if (path.hasLength(0)) {
+    if (path2.hasLength(0)) {
       let _pipe = inner(data);
       return push_path(_pipe, reverse(position));
     } else {
-      let key2 = path.head;
-      let path$1 = path.tail;
+      let key2 = path2.head;
+      let path$1 = path2.tail;
       let $ = index2(data, key2);
       if ($.isOk() && $[0] instanceof Some) {
         let data$1 = $[0][0];
@@ -1758,13 +1730,13 @@ function debug(term) {
 
 // build/dev/javascript/gleam_stdlib/gleam/uri.mjs
 var Uri = class extends CustomType {
-  constructor(scheme, userinfo, host, port, path, query, fragment) {
+  constructor(scheme, userinfo, host, port, path2, query, fragment) {
     super();
     this.scheme = scheme;
     this.userinfo = userinfo;
     this.host = host;
     this.port = port;
-    this.path = path;
+    this.path = path2;
     this.query = query;
     this.fragment = fragment;
   }
@@ -1849,7 +1821,7 @@ function parse_path_loop(loop$original, loop$uri_string, loop$pieces, loop$size)
     let size = loop$size;
     if (uri_string.startsWith("?")) {
       let rest = uri_string.slice(1);
-      let path = string_codeunit_slice(original, 0, size);
+      let path2 = string_codeunit_slice(original, 0, size);
       let pieces$1 = (() => {
         let _record = pieces;
         return new Uri(
@@ -1857,7 +1829,7 @@ function parse_path_loop(loop$original, loop$uri_string, loop$pieces, loop$size)
           _record.userinfo,
           _record.host,
           _record.port,
-          path,
+          path2,
           _record.query,
           _record.fragment
         );
@@ -1865,7 +1837,7 @@ function parse_path_loop(loop$original, loop$uri_string, loop$pieces, loop$size)
       return parse_query_with_question_mark(rest, pieces$1);
     } else if (uri_string.startsWith("#")) {
       let rest = uri_string.slice(1);
-      let path = string_codeunit_slice(original, 0, size);
+      let path2 = string_codeunit_slice(original, 0, size);
       let pieces$1 = (() => {
         let _record = pieces;
         return new Uri(
@@ -1873,7 +1845,7 @@ function parse_path_loop(loop$original, loop$uri_string, loop$pieces, loop$size)
           _record.userinfo,
           _record.host,
           _record.port,
-          path,
+          path2,
           _record.query,
           _record.fragment
         );
@@ -2544,8 +2516,8 @@ function remove_dot_segments_loop(loop$input, loop$accumulator) {
 function remove_dot_segments(input2) {
   return remove_dot_segments_loop(input2, toList([]));
 }
-function path_segments(path) {
-  return remove_dot_segments(split2(path, "/"));
+function path_segments(path2) {
+  return remove_dot_segments(split2(path2, "/"));
 }
 function to_string2(uri) {
   let parts = (() => {
@@ -2847,10 +2819,10 @@ var Text = class extends CustomType {
   }
 };
 var Element = class extends CustomType {
-  constructor(key2, namespace, tag, attrs, children2, self_closing, void$) {
+  constructor(key2, namespace2, tag, attrs, children2, self_closing, void$) {
     super();
     this.key = key2;
-    this.namespace = namespace;
+    this.namespace = namespace2;
     this.tag = tag;
     this.attrs = attrs;
     this.children = children2;
@@ -2961,6 +2933,9 @@ function href(uri) {
 function src(uri) {
   return attribute("src", uri);
 }
+function alt(text3) {
+  return attribute("alt", text3);
+}
 
 // build/dev/javascript/lustre/lustre/element.mjs
 function element(tag, attrs, children2) {
@@ -2995,6 +2970,9 @@ function element(tag, attrs, children2) {
   } else {
     return new Element("", "", tag, attrs, children2, false, false);
   }
+}
+function namespaced(namespace2, tag, attrs, children2) {
+  return new Element("", namespace2, tag, attrs, children2, false, false);
 }
 function text(content) {
   return new Text(content);
@@ -3151,9 +3129,9 @@ function morph(prev, next, dispatch) {
   return out;
 }
 function createElementNode({ prev, next, dispatch, stack }) {
-  const namespace = next.namespace || "http://www.w3.org/1999/xhtml";
+  const namespace2 = next.namespace || "http://www.w3.org/1999/xhtml";
   const canMorph = prev && prev.nodeType === Node.ELEMENT_NODE && prev.localName === next.tag && prev.namespaceURI === (next.namespace || "http://www.w3.org/1999/xhtml");
-  const el = canMorph ? prev : namespace ? document.createElementNS(namespace, next.tag) : document.createElement(next.tag);
+  const el = canMorph ? prev : namespace2 ? document.createElementNS(namespace2, next.tag) : document.createElement(next.tag);
   let handlersForEl;
   if (!registeredHandlers.has(el)) {
     const emptyHandlers = /* @__PURE__ */ new Map();
@@ -3320,14 +3298,14 @@ function lustreServerEventHandler(event2) {
     tag,
     data: include.reduce(
       (data2, property) => {
-        const path = property.split(".");
-        for (let i = 0, o = data2, e = event2; i < path.length; i++) {
-          if (i === path.length - 1) {
-            o[path[i]] = e[path[i]];
+        const path2 = property.split(".");
+        for (let i = 0, o = data2, e = event2; i < path2.length; i++) {
+          if (i === path2.length - 1) {
+            o[path2[i]] = e[path2[i]];
           } else {
-            o[path[i]] ??= {};
-            e = e[path[i]];
-            o = o[path[i]];
+            o[path2[i]] ??= {};
+            e = e[path2[i]];
+            o = o[path2[i]];
           }
         }
         return data2;
@@ -3411,13 +3389,13 @@ var LustreClientApplication = class _LustreClientApplication {
    *
    * @returns {Gleam.Ok<(action: Lustre.Action<Lustre.Client, Msg>>) => void>}
    */
-  static start({ init: init5, update: update3, view: view4 }, selector, flags) {
+  static start({ init: init6, update: update3, view: view8 }, selector, flags) {
     if (!is_browser())
       return new Error(new NotABrowser());
     const root = selector instanceof HTMLElement ? selector : document.querySelector(selector);
     if (!root)
       return new Error(new ElementNotFound(selector));
-    const app = new _LustreClientApplication(root, init5(flags), update3, view4);
+    const app = new _LustreClientApplication(root, init6(flags), update3, view8);
     return new Ok((action) => app.send(action));
   }
   /**
@@ -3428,11 +3406,11 @@ var LustreClientApplication = class _LustreClientApplication {
    *
    * @returns {LustreClientApplication}
    */
-  constructor(root, [init5, effects], update3, view4) {
+  constructor(root, [init6, effects], update3, view8) {
     this.root = root;
-    this.#model = init5;
+    this.#model = init6;
     this.#update = update3;
-    this.#view = view4;
+    this.#view = view8;
     this.#tickScheduled = window.requestAnimationFrame(
       () => this.#tick(effects.all.toArray(), true)
     );
@@ -3546,20 +3524,20 @@ var LustreClientApplication = class _LustreClientApplication {
 };
 var start = LustreClientApplication.start;
 var LustreServerApplication = class _LustreServerApplication {
-  static start({ init: init5, update: update3, view: view4, on_attribute_change }, flags) {
+  static start({ init: init6, update: update3, view: view8, on_attribute_change }, flags) {
     const app = new _LustreServerApplication(
-      init5(flags),
+      init6(flags),
       update3,
-      view4,
+      view8,
       on_attribute_change
     );
     return new Ok((action) => app.send(action));
   }
-  constructor([model, effects], update3, view4, on_attribute_change) {
+  constructor([model, effects], update3, view8, on_attribute_change) {
     this.#model = model;
     this.#update = update3;
-    this.#view = view4;
-    this.#html = view4(model);
+    this.#view = view8;
+    this.#html = view8(model);
     this.#onAttributeChange = on_attribute_change;
     this.#renderers = /* @__PURE__ */ new Map();
     this.#handlers = handlers(this.#html);
@@ -3660,11 +3638,11 @@ var is_browser = () => globalThis.window && window.document;
 
 // build/dev/javascript/lustre/lustre.mjs
 var App = class extends CustomType {
-  constructor(init5, update3, view4, on_attribute_change) {
+  constructor(init6, update3, view8, on_attribute_change) {
     super();
-    this.init = init5;
+    this.init = init6;
     this.update = update3;
-    this.view = view4;
+    this.view = view8;
     this.on_attribute_change = on_attribute_change;
   }
 };
@@ -3676,8 +3654,8 @@ var ElementNotFound = class extends CustomType {
 };
 var NotABrowser = class extends CustomType {
 };
-function application(init5, update3, view4) {
-  return new App(init5, update3, view4, new None());
+function application(init6, update3, view8) {
+  return new App(init6, update3, view8, new None());
 }
 function start2(app, selector, flags) {
   return guard(
@@ -3693,12 +3671,6 @@ function start2(app, selector, flags) {
 function text2(content) {
   return text(content);
 }
-function h1(attrs, children2) {
-  return element("h1", attrs, children2);
-}
-function nav(attrs, children2) {
-  return element("nav", attrs, children2);
-}
 function div(attrs, children2) {
   return element("div", attrs, children2);
 }
@@ -3711,11 +3683,23 @@ function span(attrs, children2) {
 function img(attrs) {
   return element("img", attrs, toList([]));
 }
+function svg(attrs, children2) {
+  return namespaced("http://www.w3.org/2000/svg", "svg", attrs, children2);
+}
 function button(attrs, children2) {
   return element("button", attrs, children2);
 }
 function input(attrs) {
   return element("input", attrs, toList([]));
+}
+
+// build/dev/javascript/lustre/lustre/element/svg.mjs
+var namespace = "http://www.w3.org/2000/svg";
+function polyline(attrs) {
+  return namespaced(namespace, "polyline", attrs, toList([]));
+}
+function path(attrs) {
+  return namespaced(namespace, "path", attrs, toList([]));
 }
 
 // build/dev/javascript/gleam_http/gleam/http.mjs
@@ -3785,7 +3769,7 @@ function scheme_from_string(scheme) {
 
 // build/dev/javascript/gleam_http/gleam/http/request.mjs
 var Request = class extends CustomType {
-  constructor(method, headers, body, scheme, host, port, path, query) {
+  constructor(method, headers, body, scheme, host, port, path2, query) {
     super();
     this.method = method;
     this.headers = headers;
@@ -3793,7 +3777,7 @@ var Request = class extends CustomType {
     this.scheme = scheme;
     this.host = host;
     this.port = port;
-    this.path = path;
+    this.path = path2;
     this.query = query;
   }
 };
@@ -3858,9 +3842,9 @@ function set_body(req, body) {
   let scheme = req.scheme;
   let host = req.host;
   let port = req.port;
-  let path = req.path;
+  let path2 = req.path;
   let query = req.query;
-  return new Request(method, headers, body, scheme, host, port, path, query);
+  return new Request(method, headers, body, scheme, host, port, path2, query);
 }
 function set_method(req, method) {
   let _record = req;
@@ -4116,14 +4100,6 @@ function expect_json(decoder, to_msg) {
   );
 }
 
-// build/dev/javascript/lustre_ui/lustre/ui/cluster.mjs
-function of(element2, attributes, children2) {
-  return element2(
-    prepend(class$("lustre-ui-cluster"), attributes),
-    children2
-  );
-}
-
 // build/dev/javascript/modem/modem.ffi.mjs
 var defaults = {
   handle_external_links: false,
@@ -4241,7 +4217,7 @@ var relative = /* @__PURE__ */ new Uri(
   /* @__PURE__ */ new None(),
   /* @__PURE__ */ new None()
 );
-function replace3(path, query, fragment) {
+function replace3(path2, query, fragment) {
   return from(
     (_) => {
       return guard(
@@ -4256,7 +4232,7 @@ function replace3(path, query, fragment) {
                 _record.userinfo,
                 _record.host,
                 _record.port,
-                path,
+                path2,
                 query,
                 fragment
               );
@@ -4275,9 +4251,9 @@ function get_url() {
 
 // build/dev/javascript/maillage/api/user.mjs
 var User = class extends CustomType {
-  constructor(id, name, email, slug) {
+  constructor(id2, name, email, slug) {
     super();
-    this.id = id;
+    this.id = id2;
     this.name = name;
     this.email = email;
     this.slug = slug;
@@ -4472,9 +4448,9 @@ var Authenticate = class extends CustomType {
 
 // build/dev/javascript/maillage/shared.mjs
 var OnChangeView = class extends CustomType {
-  constructor(view4) {
+  constructor(view8) {
     super();
-    this.view = view4;
+    this.view = view8;
   }
 };
 var AuthMessage = class extends CustomType {
@@ -4608,7 +4584,7 @@ function with_color(button2, color) {
   let _record = button2;
   return new Button(_record.label, _record.outline, color, _record.msg);
 }
-function render(button2) {
+function render(button2, classes) {
   let bg = (() => {
     let $ = button2.color;
     if ($ instanceof Primary) {
@@ -4631,17 +4607,25 @@ function render(button2) {
   })();
   return button(
     toList([
-      class$(bg + " " + fg + " rounded-md h-10 w-full flex-none"),
+      class$(
+        bg + " " + fg + " rounded-md h-10 flex-none " + classes
+      ),
       on_click(button2.msg)
     ]),
     toList([text2(button2.label)])
   );
 }
-function primary(label, msg) {
+function primary(label, classes, msg) {
   let _pipe = new$7(label, msg);
   let _pipe$1 = with_outline(_pipe, new None3());
   let _pipe$2 = with_color(_pipe$1, new Primary());
-  return render(_pipe$2);
+  return render(_pipe$2, classes);
+}
+function secondary(label, classes, msg) {
+  let _pipe = new$7(label, msg);
+  let _pipe$1 = with_outline(_pipe, new None3());
+  let _pipe$2 = with_color(_pipe$1, new Secondary());
+  return render(_pipe$2, classes);
 }
 
 // build/dev/javascript/maillage/ui/components/field.mjs
@@ -4874,7 +4858,7 @@ function sign_up_card_with_value_props(model) {
         toList([
           img(
             toList([
-              src("/static/m.svg"),
+              src("/static/images/m.svg"),
               class$("h-16 flex-none object-cover")
             ])
           ),
@@ -4947,6 +4931,7 @@ function sign_up_card_with_value_props(model) {
                     return "Sign Up";
                   }
                 })(),
+                "w-full",
                 new AuthMessage(new Authenticate())
               ),
               div(
@@ -5125,8 +5110,8 @@ function register() {
               return field(
                 "email",
                 int2,
-                (id) => {
-                  return success(new User(id, name, email, slug));
+                (id2) => {
+                  return success(new User(id2, name, email, slug));
                 }
               );
             }
@@ -5268,14 +5253,380 @@ function update(model, msg) {
   }
 }
 
-// build/dev/javascript/maillage/model.mjs
+// build/dev/javascript/maillage/ui/components/card.mjs
+function card(children2) {
+  return div(
+    toList([
+      class$(
+        "flex flex-col block rounded-xl border border-neutral-border p-4 gap-4"
+      )
+    ]),
+    children2
+  );
+}
+
+// build/dev/javascript/maillage/ui/components/handle.mjs
+function view3(handle) {
+  return span(
+    toList([
+      class$("text-caption text-xs font-caption text-subtext-color")
+    ]),
+    toList([text2(handle)])
+  );
+}
+
+// build/dev/javascript/maillage/ui/components/username.mjs
+function view4(name) {
+  return span(
+    toList([class$("font-body font-bold text-sm")]),
+    toList([text2(name)])
+  );
+}
+
+// build/dev/javascript/maillage/ui/feed/feed.mjs
 var Model3 = class extends CustomType {
-  constructor(view4, auth_model) {
+  constructor(posts) {
     super();
-    this.view = view4;
-    this.auth_model = auth_model;
+    this.posts = posts;
   }
 };
+function init4(_) {
+  return [new Model3(toList([])), none()];
+}
+function social_feed_post(avatar, name, handle, timestamp, comment_count, like_count, content) {
+  return div(
+    toList([
+      class$(
+        "flex w-full items-start p-6 border-b border-neutral-border"
+      )
+    ]),
+    toList([
+      div(
+        toList([class$("flex items-center gap-4")]),
+        toList([
+          img(
+            toList([
+              class$("w-12 h-12 rounded-full"),
+              src(avatar)
+            ])
+          )
+        ])
+      ),
+      div(
+        toList([class$("flex flex-col items-start flex-1")]),
+        toList([
+          div(
+            toList([
+              class$(
+                "flex flex-col items-start gap-1 w-full p-[4px_4px_4px_12px]"
+              )
+            ]),
+            toList([
+              div(
+                toList([class$("flex flex-wrap items-center gap-1")]),
+                toList([
+                  view4(name),
+                  view3(handle),
+                  text2("\u2022"),
+                  span(
+                    toList([
+                      class$(
+                        "text-caption font-caption text-subtext-color"
+                      )
+                    ]),
+                    toList([text2(timestamp)])
+                  )
+                ])
+              ),
+              div(
+                toList([class$("mt-2")]),
+                toList([text2(content)])
+              ),
+              div(
+                toList([
+                  class$(
+                    "flex gap-4 text-caption text-subtext-color mt-2"
+                  )
+                ]),
+                toList([
+                  span(
+                    toList([]),
+                    toList([text2("\u{1F4AC} " + comment_count)])
+                  ),
+                  span(
+                    toList([]),
+                    toList([text2("\u2764\uFE0F " + like_count)])
+                  )
+                ])
+              )
+            ])
+          )
+        ])
+      )
+    ])
+  );
+}
+function suggested_user(name, handle, avatar_url) {
+  return div(
+    toList([class$("flex w-full items-center gap-4")]),
+    toList([
+      img(
+        toList([
+          src(avatar_url),
+          alt(name),
+          class$("w-10 h-10 rounded-full")
+        ])
+      ),
+      div(
+        toList([
+          class$("flex grow shrink-0 basis-0 flex-col items-start")
+        ]),
+        toList([view4(name), view3(handle)])
+      ),
+      secondary("Follow", "", new Noop())
+    ])
+  );
+}
+function social_suggestions() {
+  return card(
+    toList([
+      span(
+        toList([class$("font-heading-3 font-bold")]),
+        toList([text2("You may also like")])
+      ),
+      div(
+        toList([class$("flex flex-col items-start gap-4 w-full")]),
+        toList([
+          suggested_user(
+            "Chris Morgan",
+            "@chrismorgan",
+            "https://res.cloudinary.com/subframe/image/upload/v1723780941/uploads/302/qgj6kevv14gw6i48bllb.png"
+          ),
+          suggested_user(
+            "Good Tunes, Inc.",
+            "@good_tunes",
+            "https://res.cloudinary.com/subframe/image/upload/v1723780941/uploads/302/qgj6kevv14gw6i48bllb.png"
+          ),
+          suggested_user(
+            "Mark",
+            "@markmarkmark",
+            "https://res.cloudinary.com/subframe/image/upload/v1723780941/uploads/302/qgj6kevv14gw6i48bllb.png"
+          )
+        ])
+      )
+    ])
+  );
+}
+function get_feed() {
+  return div(
+    toList([
+      class$(
+        "flex h-full w-full items-start justify-center bg-default-background px-6 mobile:px-0 mobile:pt-0 mobile:pb-12"
+      )
+    ]),
+    toList([
+      div(
+        toList([
+          class$(
+            "flex max-w-[576px] grow shrink-0 basis-0 flex-col items-start border-x border-solid border-neutral-border overflow-auto"
+          )
+        ]),
+        toList([
+          div(
+            toList([
+              class$(
+                "flex h-20 w-full flex-none items-center border-b border-solid border-neutral-border px-6 py-6"
+              )
+            ]),
+            toList([
+              span(
+                toList([
+                  class$("text-heading-3 font-heading-3 font-bold")
+                ]),
+                toList([text2("For You")])
+              )
+            ])
+          ),
+          social_feed_post(
+            "https://res.cloudinary.com/subframe/image/upload/v1718919568/uploads/3102/mmfbvgi9hwpewyqglgul.png",
+            "Subframe",
+            "@subframeapp",
+            "2h ago",
+            "4",
+            "72",
+            "Watch how to get started with Subframe in just a few minutes"
+          ),
+          social_feed_post(
+            "https://res.cloudinary.com/subframe/image/upload/v1711417512/shared/m0kfajqpwkfief00it4v.jpg",
+            "Dr. Jane Foster",
+            "@drjanefoster",
+            "6h ago",
+            "9",
+            "34",
+            "New research alert! \u{1F9E0}  \u{1F4CA}\n\nOur team's study on neuroplasticity in adults over 60 has been published in @NatureNeurosci.\n\nKey findings:\n1. Cognitive training increased gray matter volume\n2. Improvements sustained at 6-month follow-up\n3. Never too late to teach an old brain new tricks!"
+          ),
+          social_feed_post(
+            "https://res.cloudinary.com/subframe/image/upload/v1711417513/shared/kwut7rhuyivweg8tmyzl.jpg",
+            "Jake Turner",
+            "@jaketurner4982",
+            "1d ago",
+            "2",
+            "4",
+            "Just finished a 5K run #running"
+          )
+        ])
+      ),
+      div(
+        toList([
+          class$(
+            "flex flex-col items-start gap-2 self-stretch px-6 py-6 mobile:hidden"
+          )
+        ]),
+        toList([social_suggestions()])
+      )
+    ])
+  );
+}
+function view5(model) {
+  return get_feed();
+}
+
+// build/dev/javascript/maillage/model.mjs
+var Model4 = class extends CustomType {
+  constructor(view8, auth_model, feed_model) {
+    super();
+    this.view = view8;
+    this.auth_model = auth_model;
+    this.feed_model = feed_model;
+  }
+};
+
+// build/dev/javascript/maillage/ui/components/logo.mjs
+function view6(attributes, primarycolor, secondarycolor) {
+  let primarycolor$1 = (() => {
+    if (primarycolor instanceof Some) {
+      let color = primarycolor[0];
+      return color;
+    } else {
+      return "#2A935B";
+    }
+  })();
+  let secondarycolor$1 = (() => {
+    if (secondarycolor instanceof Some) {
+      let color = secondarycolor[0];
+      return color;
+    } else {
+      return "#f9fafb";
+    }
+  })();
+  return svg(
+    prepend(
+      attribute("xmlns", "http://www.w3.org/2000/svg"),
+      prepend(
+        attribute("width", "100"),
+        prepend(
+          attribute("height", "100"),
+          prepend(
+            attribute("viewBox", "0 0 1024 1024"),
+            attributes
+          )
+        )
+      )
+    ),
+    toList([
+      path(
+        toList([
+          attribute("fill", primarycolor$1),
+          attribute(
+            "d",
+            "M583.605 408.495C585.801 408.341 587.697 408.534 589.724 409.463C591.831 410.429 593.389 412.078 594.154 414.275C595.648 418.563 594.079 422.823 592.269 426.732C589.918 431.81 587.721 435.483 582.277 437.513C580.627 437.581 579.196 437.479 577.614 436.96C575.067 436.124 573.017 434.568 571.935 432.073C570.543 428.864 571.102 425.321 572.326 422.162C574.586 416.331 577.707 411.095 583.605 408.495Z"
+          )
+        ])
+      ),
+      path(
+        toList([
+          attribute("fill", secondarycolor$1),
+          attribute(
+            "d",
+            "M317.488 712.984C317.723 712.962 317.958 712.933 318.193 712.917C320.567 712.755 323.56 713.826 325.272 715.481C327.763 717.887 328.544 721.584 328.645 724.919C328.897 733.248 328.43 741.672 328.441 750.011L328.486 812.942Q328.364 827.114 328.506 841.286C328.56 847.28 328.982 853.538 328.364 859.501C328.09 862.151 327.323 864.46 325.416 866.392C323.659 868.173 321.869 868.603 319.45 868.898C311.229 869.901 301.971 868.993 293.651 868.959L232.375 868.539C229.742 868.545 227.1 868.66 224.973 866.857C222.889 865.09 221.693 862.401 221.48 859.709C221.272 857.096 221.998 854.361 223.833 852.434C225.412 850.774 227.39 850.161 229.604 849.852C236.659 848.869 244.495 849.489 251.637 849.473C270.566 849.433 289.936 850.192 308.816 849.035C309.504 834.292 309.019 819.318 309.014 804.554L308.986 719.901C311.256 716.015 313.195 714.423 317.488 712.984Z"
+          )
+        ])
+      ),
+      path(
+        toList([
+          attribute("fill", secondarycolor$1),
+          attribute(
+            "d",
+            "M144.967 810.689C156.352 809.821 168.473 813.618 177.586 820.396C188.102 828.218 194.603 839.056 196.405 852.04Q196.58 853.249 196.694 854.466Q196.808 855.682 196.861 856.903Q196.913 858.123 196.905 859.345Q196.896 860.567 196.826 861.787Q196.755 863.006 196.624 864.221Q196.492 865.436 196.3 866.642Q196.108 867.849 195.855 869.044Q195.602 870.24 195.289 871.421Q194.977 872.602 194.605 873.766Q194.233 874.929 193.804 876.073Q193.374 877.217 192.887 878.338Q192.4 879.458 191.858 880.553Q191.315 881.648 190.719 882.714Q190.122 883.78 189.472 884.815Q188.822 885.849 188.121 886.85Q187.42 887.851 186.67 888.815C178.106 900.042 165.806 905.522 152.118 907.431C139.991 907.985 129.293 905.641 119.476 898.216C108.914 890.229 102.38 878.794 100.561 865.715C98.7601 852.758 102.162 840.125 110.096 829.72C118.629 818.528 131.284 812.572 144.967 810.689ZM146.433 829.655C137.913 830.849 130.623 834.676 125.357 841.606C120.59 847.881 118.387 855.621 119.55 863.48C120.64 870.844 124.698 878.078 130.701 882.526Q131.766 883.3 132.893 883.98Q134.02 884.659 135.202 885.239Q136.383 885.819 137.611 886.294Q138.838 886.77 140.102 887.138Q141.366 887.506 142.656 887.764Q143.947 888.022 145.255 888.167Q146.564 888.312 147.879 888.344Q149.195 888.377 150.509 888.295C158.651 887.453 166.012 884.211 171.306 877.766Q171.774 877.196 172.213 876.604Q172.651 876.011 173.06 875.397Q173.469 874.784 173.847 874.151Q174.225 873.518 174.572 872.867Q174.918 872.216 175.231 871.548Q175.545 870.881 175.825 870.199Q176.105 869.517 176.351 868.822Q176.597 868.127 176.808 867.42Q177.019 866.714 177.195 865.998Q177.371 865.282 177.511 864.558Q177.651 863.834 177.755 863.104Q177.859 862.374 177.927 861.64Q177.995 860.906 178.026 860.169Q178.057 859.432 178.052 858.695Q178.047 857.958 178.005 857.221Q177.963 856.485 177.885 855.752Q177.796 855.014 177.67 854.282Q177.544 853.549 177.381 852.824Q177.219 852.098 177.021 851.382Q176.822 850.666 176.589 849.96Q176.355 849.255 176.086 848.562Q175.818 847.868 175.515 847.19Q175.213 846.511 174.876 845.848Q174.54 845.185 174.172 844.539Q173.803 843.894 173.403 843.268Q173.002 842.642 172.571 842.036Q172.14 841.431 171.68 840.847Q171.219 840.264 170.73 839.704Q170.241 839.145 169.724 838.61Q169.208 838.075 168.666 837.567Q168.123 837.059 167.556 836.578Q166.989 836.098 166.399 835.646Q165.871 835.24 165.325 834.858Q164.779 834.476 164.217 834.119Q163.654 833.762 163.076 833.432Q162.497 833.101 161.905 832.797Q161.312 832.493 160.706 832.216Q160.1 831.94 159.482 831.691Q158.864 831.442 158.235 831.222Q157.606 831.001 156.968 830.81Q156.33 830.619 155.684 830.456Q155.038 830.294 154.385 830.162Q153.732 830.029 153.074 829.926Q152.416 829.824 151.753 829.751Q151.091 829.678 150.426 829.636Q149.761 829.594 149.095 829.582Q148.429 829.57 147.763 829.588Q147.097 829.606 146.433 829.655Z"
+          )
+        ])
+      ),
+      path(
+        toList([
+          attribute("fill", primarycolor$1),
+          attribute(
+            "d",
+            "M230.182 155.707L270.391 155.637C278.216 155.604 287.38 154.538 294.969 156.229C295.214 156.284 295.457 156.349 295.701 156.406C298.918 157.159 301.927 163.094 303.643 165.792C308.693 173.731 313.012 182.022 317.685 190.172L347.136 241.115L443.194 408.428L477.184 467.934C482.154 476.609 486.419 486.297 492.275 494.366C495.246 498.459 498.516 501.024 503.376 502.649C507.841 504.143 512.881 504.49 517.528 503.687C536.907 500.341 532.692 484.589 542.348 480.379C544.803 479.309 547.928 479.506 550.375 480.505C552.442 481.349 553.92 482.878 554.634 484.999C556.685 491.092 553.407 497.588 550.604 502.874Q549.816 504.089 548.954 505.252Q548.092 506.416 547.159 507.524Q546.227 508.631 545.227 509.679Q544.227 510.726 543.164 511.709Q542.101 512.693 540.978 513.608Q539.856 514.523 538.679 515.366Q537.502 516.21 536.275 516.979Q535.048 517.747 533.775 518.438Q532.801 518.96 531.802 519.434Q530.804 519.908 529.783 520.333Q528.763 520.758 527.723 521.132Q526.683 521.506 525.626 521.83Q524.568 522.153 523.497 522.424Q522.425 522.695 521.342 522.914Q520.258 523.133 519.165 523.298Q518.072 523.463 516.973 523.575Q515.873 523.687 514.769 523.745Q513.665 523.803 512.56 523.808Q511.455 523.812 510.35 523.762Q509.246 523.712 508.146 523.609Q507.045 523.505 505.951 523.348Q504.857 523.19 503.772 522.98Q502.687 522.77 501.613 522.506Q500.539 522.243 499.48 521.928C490.269 519.131 481.348 512.987 475.691 505.15C471.377 499.174 466.351 487.886 462.262 480.934C444.583 450.872 427.915 420.191 410.635 389.906L339.956 267.123L304.091 204.695C298.354 194.671 292.398 184.867 286.902 174.692C273.475 174.24 259.698 174.726 246.252 175.015C241.595 175.116 236.884 175.676 232.233 175.44C230.533 175.354 228.893 175.04 227.365 174.263C224.984 173.052 223.326 170.936 222.547 168.399Q222.396 167.907 222.295 167.402Q222.194 166.897 222.145 166.384Q222.096 165.871 222.098 165.356Q222.101 164.841 222.156 164.329Q222.21 163.817 222.316 163.313Q222.422 162.809 222.579 162.319Q222.735 161.828 222.94 161.356Q223.145 160.883 223.397 160.434C224.914 157.759 227.292 156.453 230.182 155.707Z"
+          )
+        ])
+      ),
+      path(
+        toList([
+          attribute("fill", primarycolor$1),
+          attribute(
+            "d",
+            "M790.793 214.141C791.383 214.222 791.971 214.307 792.553 214.434C796.202 215.231 797.959 217.666 799.907 220.605Q800.245 223.658 800.332 226.729C800.975 247.553 800.384 268.533 800.382 289.371L800.425 407.4L800.468 755.087L800.498 785.132C800.515 789.693 801.22 794.898 800.405 799.366C800.037 801.38 799.279 803.267 797.796 804.719C795.514 806.953 792.63 807.097 789.611 807.149C788.479 806.795 787.333 806.395 786.294 805.812C784.164 804.618 783.007 802.277 782.362 800.014C780.452 793.309 781.831 780.555 781.81 773.147L781.724 710.938L781.619 459.461L781.765 308.641L781.713 253.949C781.709 244.519 781.386 234.94 781.803 225.528C781.913 223.024 782.096 220.344 783.458 218.163C785.173 215.418 787.8 214.734 790.793 214.141Z"
+          )
+        ])
+      ),
+      path(
+        toList([
+          attribute("fill", primarycolor$1),
+          attribute(
+            "d",
+            "M232.219 215.031C233.61 215.02 234.972 215.028 236.328 215.376C238.878 216.031 241.134 217.506 242.408 219.85C243.499 221.857 243.698 224.098 243.836 226.339C244.767 241.514 243.92 257.296 243.903 272.53L243.884 362.394L243.747 665.591L243.905 759.946C243.918 767.466 245.171 798.261 243.356 803.118C242.12 806.422 239.61 807.967 236.584 809.466C235.813 809.604 235.029 809.741 234.246 809.777C231.771 809.892 229.135 809.046 227.382 807.26C225.716 805.562 224.918 803.09 224.571 800.788C223.589 794.273 224.308 786.798 224.304 780.165L224.255 736.529L224.41 403.29L224.375 286.006C224.372 264.539 223.897 242.959 224.561 221.504C226.574 217.937 228.321 216.33 232.219 215.031Z"
+          )
+        ])
+      ),
+      path(
+        toList([
+          attribute("fill", primarycolor$1),
+          attribute(
+            "d",
+            "M869.304 116.165C879.593 115.234 888.475 117.011 897.736 121.535C909.283 127.174 917.643 137.101 921.692 149.275C925.953 162.082 924.603 174.965 918.454 186.899C912.515 198.426 902.503 207.071 890.058 210.904Q888.892 211.258 887.71 211.554Q886.528 211.849 885.332 212.085Q884.137 212.321 882.931 212.497Q881.725 212.673 880.512 212.788Q879.299 212.903 878.082 212.958Q876.864 213.012 875.646 213.005Q874.427 212.999 873.211 212.931Q871.994 212.863 870.782 212.735Q869.571 212.606 868.367 212.417Q867.163 212.228 865.97 211.979Q864.777 211.73 863.599 211.421Q862.42 211.112 861.258 210.745Q860.096 210.378 858.954 209.953Q857.812 209.528 856.692 209.047Q855.573 208.565 854.479 208.028Q853.385 207.491 852.32 206.9C838.134 199.212 832.206 189.46 827.826 174.483C797.588 174.506 767.291 174.051 737.063 174.633C729.651 190.1 720.015 204.759 711.505 219.662L656.031 315.773C646.786 330.536 639.063 346.289 630.083 361.189C628.497 363.822 626.886 365.47 623.797 366.094C621.131 366.632 617.804 366.336 615.535 364.721C613.733 363.439 612.293 361.188 611.974 358.995C611.614 356.516 612.202 353.901 613.265 351.664C616.896 344.021 621.755 336.59 625.975 329.246C636.808 310.396 648.145 291.836 658.871 272.926L702.423 197.586C710.096 184.255 716.895 169.303 726.224 157.126C728.558 155.844 731.844 155.643 734.488 155.469C744.358 154.82 754.638 155.418 764.553 155.321C785.257 155.118 806.106 154.714 826.801 155.404C828.61 148.661 830.896 142.267 834.969 136.526C843.167 124.971 855.577 118.443 869.304 116.165ZM872.885 134.635C863.457 136.405 855.623 140.294 850.114 148.449C845.898 154.691 844.347 162.089 845.874 169.492C847.429 177.029 852.53 184.825 858.969 189.01C865.074 192.978 871.577 193.82 878.723 193.753C886.633 192.905 893.91 189.289 898.977 183.074C903.94 176.988 905.885 169.137 904.968 161.418C903.99 153.189 899.994 145.73 893.401 140.655Q892.862 140.234 892.303 139.838Q891.744 139.443 891.167 139.074Q890.591 138.706 889.997 138.365Q889.404 138.024 888.795 137.711Q888.186 137.399 887.563 137.115Q886.94 136.832 886.304 136.578Q885.669 136.324 885.022 136.101Q884.375 135.877 883.718 135.685Q883.061 135.492 882.396 135.33Q881.731 135.169 881.059 135.039Q880.387 134.909 879.71 134.811Q879.032 134.713 878.351 134.647Q877.67 134.581 876.986 134.547Q876.303 134.513 875.618 134.512Q874.934 134.51 874.25 134.541Q873.567 134.572 872.885 134.635Z"
+          )
+        ])
+      ),
+      path(
+        toList([
+          attribute("fill", primarycolor$1),
+          attribute(
+            "d",
+            "M143.542 116.174C152.49 115.275 162.17 117.074 170.217 121.081C181.312 126.606 190.564 137.185 194.415 148.977Q194.787 150.118 195.103 151.275Q195.418 152.433 195.677 153.604Q195.936 154.776 196.137 155.959Q196.339 157.142 196.482 158.333Q196.625 159.524 196.71 160.721Q196.795 161.918 196.821 163.117Q196.848 164.317 196.815 165.516Q196.783 166.716 196.692 167.912Q196.601 169.109 196.452 170.299Q196.302 171.49 196.095 172.671Q195.888 173.853 195.623 175.024Q195.359 176.194 195.037 177.35Q194.715 178.506 194.338 179.645Q193.96 180.783 193.527 181.902Q193.094 183.021 192.607 184.118Q192.12 185.215 191.58 186.286C184.125 200.77 172.772 207.54 157.685 212.349C158.549 249.201 157.773 286.278 157.656 323.15L157.845 465.979C157.884 497.052 157.514 528.173 157.966 559.239C166.629 561.553 174.359 564.62 181.348 570.384C190.861 578.229 195.652 588.897 196.797 601.037C198.12 615.053 194.396 627.506 185.312 638.331C177.033 648.197 165.573 653.265 152.92 654.416C141.981 654.737 131.799 653.366 122.425 647.289C111.787 640.393 103.49 628.169 100.984 615.752Q100.758 614.606 100.588 613.45Q100.419 612.294 100.307 611.13Q100.195 609.967 100.141 608.8Q100.087 607.633 100.091 606.464Q100.095 605.296 100.156 604.129Q100.218 602.962 100.337 601.8Q100.457 600.638 100.633 599.483Q100.81 598.328 101.044 597.183Q101.278 596.038 101.568 594.906Q101.858 593.774 102.204 592.658Q102.549 591.542 102.95 590.444Q103.351 589.347 103.805 588.27Q104.26 587.194 104.767 586.141Q105.274 585.089 105.833 584.063Q106.392 583.036 107.001 582.039Q107.609 581.042 108.267 580.076C115.581 569.12 126.397 562.038 139.321 559.459L138.799 212.365C132.807 210.889 127.009 208.872 121.781 205.532Q120.782 204.905 119.816 204.228Q118.85 203.551 117.919 202.827Q116.988 202.102 116.095 201.332Q115.202 200.562 114.348 199.748Q113.494 198.934 112.683 198.078Q111.871 197.223 111.103 196.327Q110.335 195.432 109.613 194.499Q108.892 193.566 108.217 192.599Q107.543 191.631 106.918 190.63Q106.293 189.63 105.719 188.6Q105.145 187.569 104.624 186.511Q104.102 185.453 103.635 184.37Q103.167 183.288 102.754 182.183Q102.341 181.078 101.984 179.954Q101.627 178.83 101.327 177.689Q101.027 176.548 100.784 175.394C98.1153 162.573 99.8482 149.278 107.209 138.32C115.786 125.552 128.815 119.104 143.542 116.174ZM146.476 135.176C137.584 136.335 129.869 139.916 124.279 147.105C119.743 152.937 117.695 160.944 118.763 168.233Q118.876 168.978 119.025 169.717Q119.174 170.456 119.36 171.186Q119.546 171.917 119.768 172.637Q119.99 173.357 120.248 174.066Q120.505 174.774 120.797 175.469Q121.09 176.164 121.416 176.843Q121.743 177.523 122.102 178.185Q122.462 178.847 122.854 179.491Q123.247 180.134 123.67 180.758Q124.094 181.381 124.548 181.983Q125.002 182.584 125.486 183.163Q125.969 183.741 126.481 184.295Q126.992 184.848 127.531 185.376Q128.069 185.903 128.633 186.403Q129.197 186.903 129.785 187.375Q130.373 187.846 130.984 188.288C136.866 192.498 143.491 193.787 150.581 193.817C159.004 192.636 166.554 189.454 171.778 182.411Q172.221 181.822 172.634 181.211Q173.047 180.6 173.429 179.97Q173.81 179.34 174.161 178.691Q174.511 178.042 174.828 177.377Q175.145 176.711 175.429 176.031Q175.713 175.351 175.962 174.657Q176.212 173.963 176.426 173.258Q176.641 172.553 176.82 171.838Q176.999 171.123 177.143 170.4Q177.286 169.677 177.393 168.948Q177.5 168.218 177.571 167.485Q177.641 166.751 177.675 166.015Q177.709 165.278 177.707 164.541Q177.704 163.804 177.664 163.068Q177.625 162.332 177.549 161.599Q177.473 160.865 177.36 160.137Q177.256 159.415 177.117 158.699Q176.977 157.984 176.802 157.276Q176.627 156.568 176.416 155.87Q176.206 155.172 175.96 154.485Q175.715 153.798 175.436 153.125Q175.157 152.451 174.844 151.792Q174.531 151.134 174.186 150.491Q173.841 149.849 173.464 149.225Q173.086 148.601 172.679 147.996Q172.271 147.392 171.833 146.808Q171.396 146.225 170.929 145.664Q170.463 145.104 169.969 144.567Q169.476 144.03 168.956 143.519Q168.436 143.008 167.891 142.523Q167.346 142.039 166.777 141.582Q166.209 141.126 165.618 140.698C160.233 136.741 153.18 134.425 146.476 135.176ZM144.9 577.617C136.994 578.955 130.372 582.416 125.59 589.085Q125.159 589.676 124.757 590.287Q124.356 590.898 123.985 591.529Q123.614 592.16 123.275 592.808Q122.936 593.456 122.63 594.12Q122.324 594.785 122.051 595.463Q121.778 596.142 121.539 596.833Q121.301 597.525 121.096 598.227Q120.892 598.929 120.723 599.641Q120.554 600.353 120.421 601.072Q120.287 601.791 120.19 602.516Q120.092 603.241 120.03 603.97Q119.969 604.698 119.944 605.429Q119.919 606.161 119.93 606.892Q119.941 607.623 119.988 608.353Q120.036 609.083 120.12 609.81Q120.203 610.536 120.323 611.258C121.602 618.654 125.627 625.688 131.82 630.038C137.736 634.193 145.949 636.305 153.099 634.997C161.477 633.175 168.581 629.748 173.429 622.334C177.742 615.74 178.9 608.009 177.195 600.379C175.475 592.685 170.966 586.155 164.257 582.006C158.188 578.252 151.968 577.17 144.9 577.617Z"
+          )
+        ])
+      ),
+      path(
+        toList([
+          attribute("fill", secondarycolor$1),
+          attribute(
+            "d",
+            "M869.822 369.652C881.427 368.272 893.573 370.399 903.207 377.213C913.909 384.781 922.088 396.144 924.209 409.197C926.36 422.437 923.762 435.378 915.795 446.244C908.829 455.745 897.437 463 885.734 464.767C884.872 476.389 885.543 488.55 885.531 500.222L885.692 575.778L885.507 812.282C891.671 814.065 897.518 816.146 902.825 819.854C913.24 827.129 921.289 839.694 923.472 852.215C925.647 864.691 922.391 876.764 915.097 886.994C906.616 898.888 894.818 905.068 880.621 907.364C871.981 908.302 862.303 906.609 854.543 902.677C842.94 896.798 833.307 885.455 829.361 873.061C825.525 861.013 827.098 847.627 832.951 836.488C840.233 822.629 851.638 816.056 866.137 811.626C866.712 800.133 866.185 788.316 866.252 776.788L866.242 688.73Q866.671 576.726 865.922 464.724C858.954 462.973 852.477 460.6 846.667 456.268C836.864 448.958 829.994 437.038 828.255 424.964C826.409 412.153 829.227 398.656 837.182 388.314Q837.923 387.363 838.709 386.449Q839.495 385.535 840.324 384.66Q841.154 383.786 842.025 382.953Q842.896 382.12 843.807 381.33Q844.718 380.54 845.666 379.796Q846.614 379.051 847.598 378.354Q848.581 377.657 849.597 377.008Q850.613 376.36 851.66 375.761Q852.706 375.163 853.781 374.616Q854.855 374.07 855.955 373.576Q857.055 373.082 858.177 372.643Q859.3 372.203 860.442 371.819Q861.585 371.435 862.745 371.106Q863.905 370.778 865.079 370.507Q866.254 370.235 867.44 370.022Q868.627 369.808 869.822 369.652ZM872.125 388.612C863.068 390.664 856.226 394.296 851.248 402.339C847.199 408.883 845.92 416.351 847.702 423.849C849.53 431.546 854.337 438.597 861.125 442.745C867.584 446.692 874.194 447.403 881.528 446.43C889.613 444.621 896.486 440.16 900.992 433.147C905.001 426.905 906.791 419.637 905.184 412.28Q905.027 411.555 904.834 410.838Q904.642 410.122 904.415 409.415Q904.187 408.709 903.926 408.014Q903.664 407.32 903.369 406.639Q903.074 405.958 902.746 405.293Q902.418 404.627 902.058 403.978Q901.698 403.329 901.307 402.699Q900.915 402.068 900.494 401.458Q900.072 400.847 899.621 400.258Q899.17 399.669 898.691 399.102Q898.212 398.536 897.706 397.993Q897.199 397.451 896.667 396.933Q896.135 396.416 895.578 395.926Q895.022 395.435 894.442 394.973Q893.861 394.51 893.259 394.076Q892.657 393.642 892.035 393.238C886.038 389.396 879.17 388.061 872.125 388.612ZM872.35 830.149C863.621 831.879 855.963 836.217 850.984 843.758Q850.599 844.336 850.244 844.933Q849.889 845.53 849.565 846.144Q849.24 846.758 848.947 847.387Q848.653 848.016 848.392 848.66Q848.131 849.303 847.902 849.959Q847.673 850.614 847.478 851.281Q847.282 851.947 847.12 852.622Q846.958 853.298 846.831 853.98Q846.703 854.663 846.61 855.351Q846.516 856.039 846.458 856.731Q846.399 857.423 846.375 858.117Q846.352 858.811 846.363 859.506Q846.374 860.2 846.42 860.893Q846.466 861.586 846.546 862.275Q846.627 862.965 846.742 863.65Q846.858 864.335 847.007 865.013C848.647 872.61 853.068 879.634 859.749 883.754C865.809 887.491 872.298 888.2 879.257 887.918C887.878 886.25 894.969 882.689 899.943 875.186Q900.323 874.6 900.675 873.996Q901.026 873.392 901.347 872.771Q901.668 872.151 901.959 871.515Q902.249 870.88 902.508 870.231Q902.767 869.582 902.995 868.921Q903.222 868.26 903.416 867.589Q903.61 866.918 903.772 866.238Q903.933 865.558 904.061 864.871Q904.189 864.185 904.283 863.492Q904.377 862.8 904.437 862.104Q904.498 861.408 904.524 860.709Q904.55 860.011 904.542 859.312Q904.534 858.614 904.491 857.916Q904.449 857.219 904.373 856.524Q904.296 855.83 904.186 855.14Q904.076 854.45 903.932 853.766C902.338 845.951 897.451 838.673 890.662 834.459C884.974 830.929 878.954 829.777 872.35 830.149Z"
+          )
+        ])
+      ),
+      path(
+        toList([
+          attribute("fill", secondarycolor$1),
+          attribute(
+            "d",
+            "M316.133 386.052C317.505 385.998 318.923 385.916 320.283 386.143C323.695 386.714 325.77 388.661 327.672 391.442C330.705 395.877 332.854 401.082 335.491 405.775C340.125 414.021 345.046 422.113 349.678 430.373L387.687 497.547Q437.473 586.074 488.565 673.854C493.208 681.748 497.798 689.756 502.13 697.823C503.563 700.492 504.677 704.798 506.604 706.908C507.875 708.298 509.559 708.885 511.419 708.831C516.173 708.691 519.694 703.456 521.798 699.755L663.011 451.419L684.754 412.997C688.695 405.978 692.848 396.196 698.16 390.336C699.84 388.483 701.825 387.48 704.338 387.391C707.007 387.296 709.759 387.944 711.689 389.885C713.804 392.01 714.453 395.047 714.64 397.938C715.021 403.823 714.461 409.921 714.458 415.833L714.565 455.317Q715.081 519.835 714.689 584.353L715.038 798.768L715.03 833.068C715.095 839.955 715.485 846.857 715.368 853.741C715.295 858.046 715.249 862.898 711.804 866.013C710.051 867.598 707.784 868.252 705.446 868.092C701.113 867.796 698.683 865.794 695.987 862.592C694.505 855.29 695.141 847.374 695.174 839.942L695.253 809.552L695.413 689.25Q694.902 596.501 695.433 503.75C695.524 480.579 695.079 457.325 695.441 434.167C679.736 459.386 665.887 485.815 651.146 511.601L577.98 639.429L548.118 691.857C543.603 699.817 539.572 708.634 534.44 716.176C532.318 719.294 529.321 721.827 526.141 723.827C520.003 727.69 512.577 729.343 505.442 727.567C500.656 726.376 496.051 723.783 492.976 719.871C487.673 713.126 483.99 704.357 479.686 696.896L450.635 647.015L378.91 521.518C362.273 491.89 346.192 462.009 328.622 432.912C328.036 453.866 328.531 474.933 328.581 495.901L328.461 589.162L328.589 624.838C328.623 630.953 329.283 637.797 328.357 643.804C327.922 646.629 326.882 650.017 324.39 651.707Q323.992 651.971 323.57 652.194Q323.148 652.417 322.706 652.597Q322.264 652.777 321.806 652.911Q321.348 653.046 320.879 653.134Q320.41 653.222 319.934 653.263Q319.458 653.304 318.981 653.297Q318.504 653.289 318.03 653.235Q317.555 653.18 317.089 653.078C314.382 652.5 311.841 650.772 310.473 648.341C309.12 645.935 308.99 642.793 308.944 640.086C308.406 608.555 309.437 576.865 309.451 545.313L309.418 440.026C309.386 431.233 307.714 397.296 309.594 391.83C310.651 388.759 313.408 387.417 316.133 386.052Z"
+          )
+        ])
+      )
+    ])
+  );
+}
 
 // build/dev/javascript/maillage/maillage.mjs
 function on_route_change(uri) {
@@ -5292,7 +5643,7 @@ function update2(model, msg) {
     return [
       (() => {
         let _record = model;
-        return new Model3(route, _record.auth_model);
+        return new Model4(route, _record.auth_model, _record.feed_model);
       })(),
       none()
     ];
@@ -5304,7 +5655,7 @@ function update2(model, msg) {
     return [
       (() => {
         let _record = model;
-        return new Model3(_record.view, auth_model);
+        return new Model4(_record.view, auth_model, _record.feed_model);
       })(),
       auth_effect
     ];
@@ -5312,11 +5663,14 @@ function update2(model, msg) {
     return [
       (() => {
         let _record = model;
-        return new Model3(_record.view, _record.auth_model);
+        return new Model4(_record.view, _record.auth_model, _record.feed_model);
       })(),
       none()
     ];
   }
+}
+function view_feed(model) {
+  return view5(model.feed_model);
 }
 function view_auth(model) {
   return view2(model.auth_model);
@@ -5327,66 +5681,156 @@ function layout_empty(child, _) {
     toList([child])
   );
 }
-function view_nav(model) {
-  let view_nav_item = (path, text3) => {
-    return a(
-      toList([href("/" + path), class$("text-brand-700")]),
-      toList([text(text3)])
-    );
-  };
-  let nav_items = filter_map(
-    toList([["", "Home"], ["auth", "Auth"]]),
-    (item) => {
-      let $ = item[0];
-      if ($ === "auth") {
-        let $1 = model.auth_model.current_user;
-        if ($1 instanceof Some) {
-          return new Error("");
-        } else {
-          return new Ok(view_nav_item(item[0], item[1]));
-        }
-      } else {
-        return new Ok(view_nav_item(item[0], item[1]));
-      }
-    }
+function navigation_item(label, paths, path2) {
+  return div(
+    toList([
+      class$(
+        "sc-keTIit _reset_2qoun_1 sc-ovuCP lhPKPj _cursorPointer_1ca4c_1 flex min-h-[48px] flex-col items-center justify-center gap-2 w-full p-[12px_8px_8px] rounded-[--05ebad98-ce65-4785-9582-ebf66b8f5bf4]"
+      )
+    ]),
+    toList([
+      span(
+        toList([class$("sc-ghWlax gLamcN icon-module_root__7C4BA")]),
+        toList([
+          svg(
+            toList([
+              attribute("xmlns", "http://www.w3.org/2000/svg"),
+              attribute("width", "1em"),
+              attribute("height", "1em"),
+              attribute("viewBox", "0 0 24 24"),
+              attribute("fill", "none"),
+              attribute("stroke", "currentColor"),
+              attribute("stroke-width", "2"),
+              attribute("stroke-linecap", "round"),
+              attribute("stroke-linejoin", "round")
+            ]),
+            paths
+          )
+        ])
+      ),
+      span(
+        toList([class$("sc-cEzcPc dEBkIT _reset_2qoun_1 font-body")]),
+        toList([text2(label)])
+      )
+    ])
   );
-  return of(nav, toList([]), nav_items);
+}
+function sidebar() {
+  return div(
+    toList([
+      class$(
+        "sc-keTIit _reset_2qoun_1 sc-ovuCP lhPKPj flex w-20 flex-none flex-col items-start self-stretch bg-[--49e8e4fd-73fb-457b-ae9a-59c2d60e53ae]\n"
+      )
+    ]),
+    toList([
+      div(
+        toList([
+          class$(
+            "sc-keTIit _reset_2qoun_1 flex flex-col items-center justify-center gap-2 p-6 w-full"
+          )
+        ]),
+        toList([
+          div(
+            toList([class$("sc-keTIit inGEUB _reset_2qoun_1")]),
+            toList([
+              view6(
+                toList([
+                  attribute("width", "50"),
+                  attribute("height", "50")
+                ]),
+                new None(),
+                new None()
+              )
+            ])
+          )
+        ])
+      ),
+      div(
+        toList([
+          class$(
+            "flex flex-col items-center gap-1 p-2 w-full flex-1"
+          )
+        ]),
+        toList([
+          navigation_item(
+            "Home",
+            toList([
+              path(
+                toList([
+                  attribute(
+                    "d",
+                    "m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"
+                  )
+                ])
+              ),
+              polyline(
+                toList([attribute("points", "9 22 9 12 15 12 15 22")])
+              )
+            ]),
+            "9 22V12H15V22"
+          ),
+          navigation_item(
+            "Inbox",
+            toList([
+              polyline(
+                toList([
+                  attribute(
+                    "points",
+                    "22 12 16 12 14 15 10 15 8 12 2 12"
+                  )
+                ])
+              ),
+              path(
+                toList([
+                  attribute(
+                    "d",
+                    "M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"
+                  )
+                ])
+              )
+            ]),
+            "22 12H16L14 15H10L8 12H2"
+          )
+        ])
+      )
+    ])
+  );
 }
 function layout_sidebar(child, model) {
   return div(
-    toList([class$("w-full h-full min-h-screen text-default-font")]),
     toList([
-      view_nav(model),
-      child,
+      class$("w-full h-full min-h-screen text-default-font flex")
+    ]),
+    toList([
+      sidebar(),
       (() => {
         let $ = model.auth_model.current_user;
         if ($ instanceof Some) {
           let current_user = $[0];
-          return text2("Authenticated: " + current_user.name);
+          return text2("Auth");
         } else {
           return text2("");
         }
-      })()
+      })(),
+      div(
+        toList([
+          class$(
+            "flex flex-col items-start gap-4 self-stretch flex-1"
+          )
+        ]),
+        toList([child])
+      )
     ])
   );
 }
-function view_body(children2) {
-  return div(toList([]), children2);
-}
-function view_title(text3) {
-  return h1(toList([]), toList([text(text3)]));
-}
-function view_home(_) {
-  return view_body(toList([view_title("")]));
-}
-function view3(model) {
+function view7(model) {
   let page = (() => {
     let $ = model.view;
     if ($ instanceof Auth) {
       let _pipe = view_auth(model);
       return layout_empty(_pipe, model);
     } else {
-      let _pipe = view_home(model);
+      let _pipe = view_feed(model);
       return layout_sidebar(_pipe, model);
     }
   })();
@@ -5461,7 +5905,7 @@ function get_current_user() {
                 throw makeError(
                   "panic",
                   "maillage",
-                  72,
+                  75,
                   "",
                   "Failed getting access to storage!",
                   {}
@@ -5473,7 +5917,7 @@ function get_current_user() {
             throw makeError(
               "let_assert",
               "maillage",
-              69,
+              72,
               "",
               "Pattern match failed, no pattern matched the value.",
               { value: $1 }
@@ -5493,7 +5937,7 @@ function get_current_user() {
             throw makeError(
               "panic",
               "maillage",
-              84,
+              87,
               "",
               "`panic` expression evaluated.",
               {}
@@ -5508,22 +5952,24 @@ function get_current_user() {
     });
   }
 }
-function init4(flags) {
+function init5(flags) {
   let $ = init3(flags);
   let auth_model = $[0];
+  let $1 = init4(flags);
+  let feed_model = $1[0];
   return [
-    new Model3(new Main(), auth_model),
+    new Model4(new Main(), auth_model, feed_model),
     batch(toList([get_current_user(), init2(on_route_change)]))
   ];
 }
 function main() {
-  let app = application(init4, update2, view3);
+  let app = application(init5, update2, view7);
   let $ = start2(app, "#app", void 0);
   if (!$.isOk()) {
     throw makeError(
       "let_assert",
       "maillage",
-      99,
+      102,
       "main",
       "Pattern match failed, no pattern matched the value.",
       { value: $ }
