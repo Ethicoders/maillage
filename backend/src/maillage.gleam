@@ -70,7 +70,7 @@ pub fn main() {
   scalar Password
 
   type User {id: ID!, name: String!, slug: String!}
-  type Post {id: ID!, content: String!, author: Int!}
+  type Post {id: ID!, content: String!, author: User!}
   type AuthenticatedUser {user: User!, sessionToken: String!}
 
 
@@ -87,7 +87,7 @@ pub fn main() {
   input RegisterRequest {name: String!, email: Email!, password: Password!}
   input LoginRequest {email: Email!, password: Password!}
   input CreatePostRequest {content: String!}
-  input FeedRequest {author: Int}
+  input FeedRequest {author: ID}
 
   type Query {
     me: User!

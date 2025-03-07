@@ -17,7 +17,7 @@ import lustre/ui/cluster
 import lustre_http
 import model.{type Model, Model}
 import modem
-import shared.{type Msg, AuthMessage, Noop, OnChangeView}
+import shared.{type Msg, AuthMessage, FeedMessage, Noop, OnChangeView}
 import ui/auth/msg
 import ui/components/logo
 import ui/feed/feed
@@ -46,8 +46,8 @@ fn get_current_user() {
         use name <- decode.field("name", decode.string)
         // use email <- decode.field("email", decode.string)
         use slug <- decode.field("slug", decode.string)
-        // use id <- decode.field("email", decode.int)
-        decode.success(user.User(id: 0, name:, slug:, email: ""))
+        use id <- decode.field("id", decode.string)
+        decode.success(user.User(id:, name:, slug:, email: option.None))
       }
 
       let login_decoder = {
@@ -106,11 +106,15 @@ pub fn main() {
 
 fn init(flags) -> #(Model, Effect(Msg)) {
   let #(auth_model, _effect) = auth.init(flags)
-  let #(feed_model, _effect) = feed.init(flags)
+  let #(feed_model, feed_effect) = feed.init(flags)
 
   #(
     Model(auth_model:, feed_model:, view: shared.Main),
-    effect.batch([get_current_user(), modem.init(on_route_change)]),
+    effect.batch([
+      get_current_user(),
+      effect.map(feed_effect, fn(e) { shared.FeedMessage(e) }),
+      modem.init(on_route_change),
+    ]),
   )
 }
 
@@ -129,6 +133,10 @@ fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
     AuthMessage(auth_msg) -> {
       let #(auth_model, auth_effect) = auth.update(model.auth_model, auth_msg)
       #(Model(..model, auth_model:), auth_effect)
+    }
+    FeedMessage(feed_msg) -> {
+      let #(feed_model, feed_effect) = feed.update(model.feed_model, feed_msg)
+      #(Model(..model, feed_model:), feed_effect)
     }
     Noop -> #(Model(..model), effect.none())
   }
@@ -228,7 +236,7 @@ pub fn sidebar() {
             "9 22V12H15V22",
           ),
           navigation_item(
-            "Inbox",
+            "Mails",
             [
               svg.polyline([
                 attribute.attribute(

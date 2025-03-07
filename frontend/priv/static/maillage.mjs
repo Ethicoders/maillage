@@ -326,13 +326,13 @@ function reverse_and_concat(loop$remaining, loop$accumulator) {
 }
 function do_keys_loop(loop$list, loop$acc) {
   while (true) {
-    let list2 = loop$list;
+    let list3 = loop$list;
     let acc = loop$acc;
-    if (list2.hasLength(0)) {
+    if (list3.hasLength(0)) {
       return reverse_and_concat(acc, toList([]));
     } else {
-      let first2 = list2.head;
-      let rest = list2.tail;
+      let first2 = list3.head;
+      let rest = list3.tail;
       loop$list = rest;
       loop$acc = prepend(first2[0], acc);
     }
@@ -358,27 +358,27 @@ function reverse_loop(loop$remaining, loop$accumulator) {
     }
   }
 }
-function reverse(list2) {
-  return reverse_loop(list2, toList([]));
+function reverse(list3) {
+  return reverse_loop(list3, toList([]));
 }
 function map_loop(loop$list, loop$fun, loop$acc) {
   while (true) {
-    let list2 = loop$list;
+    let list3 = loop$list;
     let fun = loop$fun;
     let acc = loop$acc;
-    if (list2.hasLength(0)) {
+    if (list3.hasLength(0)) {
       return reverse(acc);
     } else {
-      let first$1 = list2.head;
-      let rest$1 = list2.tail;
+      let first$1 = list3.head;
+      let rest$1 = list3.tail;
       loop$list = rest$1;
       loop$fun = fun;
       loop$acc = prepend(fun(first$1), acc);
     }
   }
 }
-function map(list2, fun) {
-  return map_loop(list2, fun, toList([]));
+function map(list3, fun) {
+  return map_loop(list3, fun, toList([]));
 }
 function new$() {
   return toList([]);
@@ -402,14 +402,14 @@ function append(first2, second) {
 }
 function fold(loop$list, loop$initial, loop$fun) {
   while (true) {
-    let list2 = loop$list;
+    let list3 = loop$list;
     let initial = loop$initial;
     let fun = loop$fun;
-    if (list2.hasLength(0)) {
+    if (list3.hasLength(0)) {
       return initial;
     } else {
-      let x = list2.head;
-      let rest$1 = list2.tail;
+      let x = list3.head;
+      let rest$1 = list3.tail;
       loop$list = rest$1;
       loop$initial = fun(initial, x);
       loop$fun = fun;
@@ -434,19 +434,19 @@ function index_fold_loop(loop$over, loop$acc, loop$with, loop$index) {
     }
   }
 }
-function index_fold(list2, initial, fun) {
-  return index_fold_loop(list2, initial, fun, 0);
+function index_fold(list3, initial, fun) {
+  return index_fold_loop(list3, initial, fun, 0);
 }
-function key_set(list2, key2, value2) {
-  if (list2.hasLength(0)) {
+function key_set(list3, key2, value2) {
+  if (list3.hasLength(0)) {
     return toList([[key2, value2]]);
-  } else if (list2.atLeastLength(1) && isEqual(list2.head[0], key2)) {
-    let k = list2.head[0];
-    let rest$1 = list2.tail;
+  } else if (list3.atLeastLength(1) && isEqual(list3.head[0], key2)) {
+    let k = list3.head[0];
+    let rest$1 = list3.tail;
     return prepend([key2, value2], rest$1);
   } else {
-    let first$1 = list2.head;
-    let rest$1 = list2.tail;
+    let first$1 = list3.head;
+    let rest$1 = list3.tail;
     return prepend(first$1, key_set(rest$1, key2, value2));
   }
 }
@@ -631,13 +631,13 @@ function spliceIn(arr, at, val) {
   const len = arr.length;
   const out = new Array(len + 1);
   let i = 0;
-  let g = 0;
+  let g2 = 0;
   while (i < at) {
-    out[g++] = arr[i++];
+    out[g2++] = arr[i++];
   }
-  out[g++] = val;
+  out[g2++] = val;
   while (i < len) {
-    out[g++] = arr[i++];
+    out[g2++] = arr[i++];
   }
   return out;
 }
@@ -645,13 +645,13 @@ function spliceOut(arr, at) {
   const len = arr.length;
   const out = new Array(len - 1);
   let i = 0;
-  let g = 0;
+  let g2 = 0;
   while (i < at) {
-    out[g++] = arr[i++];
+    out[g2++] = arr[i++];
   }
   ++i;
   while (i < len) {
-    out[g++] = arr[i++];
+    out[g2++] = arr[i++];
   }
   return out;
 }
@@ -1432,8 +1432,8 @@ function inspectCustomType(record) {
   }).join(", ");
   return props ? `${record.constructor.name}(${props})` : record.constructor.name;
 }
-function inspectList(list2) {
-  return `[${list2.toArray().map(inspect).join(", ")}]`;
+function inspectList(list3) {
+  return `[${list3.toArray().map(inspect).join(", ")}]`;
 }
 function inspectBitArray(bits) {
   return `<<${Array.from(bits.buffer).join(", ")}>>`;
@@ -1507,6 +1507,24 @@ function index2(data, key2) {
     return new Ok(new None());
   }
   return new Error(int4 ? "Indexable" : "Dict");
+}
+function list(data, decode3, pushPath, index5, emptyList) {
+  if (!(data instanceof List || Array.isArray(data))) {
+    let error = new DecodeError2("List", classify_dynamic(data), emptyList);
+    return [emptyList, List.fromArray([error])];
+  }
+  const decoded = [];
+  for (const element2 of data) {
+    const layer = decode3(element2);
+    const [out, errors] = layer;
+    if (errors instanceof NonEmpty) {
+      const [_, errors2] = pushPath(layer, index5.toString());
+      return [emptyList, errors2];
+    }
+    decoded.push(out);
+    index5++;
+  }
+  return [List.fromArray(decoded), emptyList];
 }
 function int(data) {
   if (Number.isInteger(data))
@@ -1617,6 +1635,21 @@ function decode_string2(data) {
   return run_dynamic_function(data, "String", string);
 }
 var string2 = /* @__PURE__ */ new Decoder(decode_string2);
+function list2(inner) {
+  return new Decoder(
+    (data) => {
+      return list(
+        data,
+        inner.function,
+        (p, k) => {
+          return push_path(p, toList([k]));
+        },
+        0,
+        toList([])
+      );
+    }
+  );
+}
 function push_path(layer, path2) {
   let decoder = one_of(
     string2,
@@ -2918,6 +2951,9 @@ function on(name, handler) {
 function class$(name) {
   return attribute("class", name);
 }
+function id(name) {
+  return attribute("id", name);
+}
 function type_(name) {
   return attribute("type", name);
 }
@@ -3389,13 +3425,13 @@ var LustreClientApplication = class _LustreClientApplication {
    *
    * @returns {Gleam.Ok<(action: Lustre.Action<Lustre.Client, Msg>>) => void>}
    */
-  static start({ init: init6, update: update3, view: view8 }, selector, flags) {
+  static start({ init: init6, update: update4, view: view8 }, selector, flags) {
     if (!is_browser())
       return new Error(new NotABrowser());
     const root = selector instanceof HTMLElement ? selector : document.querySelector(selector);
     if (!root)
       return new Error(new ElementNotFound(selector));
-    const app = new _LustreClientApplication(root, init6(flags), update3, view8);
+    const app = new _LustreClientApplication(root, init6(flags), update4, view8);
     return new Ok((action) => app.send(action));
   }
   /**
@@ -3406,10 +3442,10 @@ var LustreClientApplication = class _LustreClientApplication {
    *
    * @returns {LustreClientApplication}
    */
-  constructor(root, [init6, effects], update3, view8) {
+  constructor(root, [init6, effects], update4, view8) {
     this.root = root;
     this.#model = init6;
-    this.#update = update3;
+    this.#update = update4;
     this.#view = view8;
     this.#tickScheduled = window.requestAnimationFrame(
       () => this.#tick(effects.all.toArray(), true)
@@ -3524,18 +3560,18 @@ var LustreClientApplication = class _LustreClientApplication {
 };
 var start = LustreClientApplication.start;
 var LustreServerApplication = class _LustreServerApplication {
-  static start({ init: init6, update: update3, view: view8, on_attribute_change }, flags) {
+  static start({ init: init6, update: update4, view: view8, on_attribute_change }, flags) {
     const app = new _LustreServerApplication(
       init6(flags),
-      update3,
+      update4,
       view8,
       on_attribute_change
     );
     return new Ok((action) => app.send(action));
   }
-  constructor([model, effects], update3, view8, on_attribute_change) {
+  constructor([model, effects], update4, view8, on_attribute_change) {
     this.#model = model;
-    this.#update = update3;
+    this.#update = update4;
     this.#view = view8;
     this.#html = view8(model);
     this.#onAttributeChange = on_attribute_change;
@@ -3638,10 +3674,10 @@ var is_browser = () => globalThis.window && window.document;
 
 // build/dev/javascript/lustre/lustre.mjs
 var App = class extends CustomType {
-  constructor(init6, update3, view8, on_attribute_change) {
+  constructor(init6, update4, view8, on_attribute_change) {
     super();
     this.init = init6;
-    this.update = update3;
+    this.update = update4;
     this.view = view8;
     this.on_attribute_change = on_attribute_change;
   }
@@ -3654,8 +3690,8 @@ var ElementNotFound = class extends CustomType {
 };
 var NotABrowser = class extends CustomType {
 };
-function application(init6, update3, view8) {
-  return new App(init6, update3, view8, new None());
+function application(init6, update4, view8) {
+  return new App(init6, update4, view8, new None());
 }
 function start2(app, selector, flags) {
   return guard(
@@ -3697,6 +3733,12 @@ function input(attrs) {
 var namespace = "http://www.w3.org/2000/svg";
 function polyline(attrs) {
   return namespaced(namespace, "polyline", attrs, toList([]));
+}
+function g(attrs, children2) {
+  return namespaced(namespace, "g", attrs, children2);
+}
+function svg2(attrs, children2) {
+  return namespaced(namespace, "svg", attrs, children2);
 }
 function path(attrs) {
   return namespaced(namespace, "path", attrs, toList([]));
@@ -4446,6 +4488,24 @@ var LoginResponse = class extends CustomType {
 var Authenticate = class extends CustomType {
 };
 
+// build/dev/javascript/maillage/api/post.mjs
+var Post2 = class extends CustomType {
+  constructor(id2, content, author) {
+    super();
+    this.id = id2;
+    this.content = content;
+    this.author = author;
+  }
+};
+
+// build/dev/javascript/maillage/ui/feed/msg.mjs
+var AppendPosts = class extends CustomType {
+  constructor(x0) {
+    super();
+    this[0] = x0;
+  }
+};
+
 // build/dev/javascript/maillage/shared.mjs
 var OnChangeView = class extends CustomType {
   constructor(view8) {
@@ -4454,6 +4514,12 @@ var OnChangeView = class extends CustomType {
   }
 };
 var AuthMessage = class extends CustomType {
+  constructor(x0) {
+    super();
+    this[0] = x0;
+  }
+};
+var FeedMessage = class extends CustomType {
   constructor(x0) {
     super();
     this[0] = x0;
@@ -4752,13 +4818,36 @@ var Model2 = class extends CustomType {
     this.current_user = current_user;
   }
 };
+function user_decoder() {
+  return field(
+    "name",
+    string2,
+    (name) => {
+      return field(
+        "slug",
+        string2,
+        (slug) => {
+          return field(
+            "id",
+            string2,
+            (id2) => {
+              return success(
+                new User(id2, name, new None(), slug)
+              );
+            }
+          );
+        }
+      );
+    }
+  );
+}
 function get_storage() {
   let $ = localStorage();
   if (!$.isOk()) {
     throw makeError(
       "let_assert",
       "ui/auth/auth",
-      104,
+      112,
       "get_storage",
       "Pattern match failed, no pattern matched the value.",
       { value: $ }
@@ -5008,22 +5097,9 @@ function login() {
     let _pipe$5 = set_uri(_pipe$4, get_url() + "/graphql");
     return set_header3(_pipe$5, "Content-Type", "application/json");
   })();
-  let user_decoder = field(
-    "name",
-    string2,
-    (name) => {
-      return field(
-        "slug",
-        string2,
-        (slug) => {
-          return success(new User(0, name, "", slug));
-        }
-      );
-    }
-  );
   let auth_decoder = field(
     "user",
-    user_decoder,
+    user_decoder(),
     (user) => {
       return field(
         "sessionToken",
@@ -5095,7 +5171,7 @@ function register() {
     let _pipe$6 = set_uri(_pipe$5, get_url() + "/graphql");
     return set_header3(_pipe$6, "Content-Type", "application/json");
   })();
-  let user_decoder = field(
+  let user_decoder$1 = field(
     "name",
     string2,
     (name) => {
@@ -5109,9 +5185,11 @@ function register() {
             (slug) => {
               return field(
                 "email",
-                int2,
+                string2,
                 (id2) => {
-                  return success(new User(id2, name, email, slug));
+                  return success(
+                    new User(id2, name, new Some(email), slug)
+                  );
                 }
               );
             }
@@ -5122,7 +5200,7 @@ function register() {
   );
   let auth_decoder = field(
     "user",
-    user_decoder,
+    user_decoder$1,
     (user) => {
       return field(
         "sessionToken",
@@ -5206,7 +5284,7 @@ function update(model, msg) {
             throw makeError(
               "panic",
               "ui/auth/auth",
-              207,
+              215,
               "",
               "`panic` expression evaluated.",
               {}
@@ -5225,7 +5303,7 @@ function update(model, msg) {
           throw makeError(
             "panic",
             "ui/auth/auth",
-            217,
+            225,
             "",
             "Failed writing to storage!",
             {}
@@ -5237,7 +5315,7 @@ function update(model, msg) {
       throw makeError(
         "let_assert",
         "ui/auth/auth",
-        215,
+        223,
         "update",
         "Pattern match failed, no pattern matched the value.",
         { value: $ }
@@ -5271,7 +5349,7 @@ function view3(handle) {
     toList([
       class$("text-caption text-xs font-caption text-subtext-color")
     ]),
-    toList([text2(handle)])
+    toList([text2("@" + handle)])
   );
 }
 
@@ -5290,10 +5368,14 @@ var Model3 = class extends CustomType {
     this.posts = posts;
   }
 };
-function init4(_) {
-  return [new Model3(toList([])), none()];
+function update2(model, msg) {
+  {
+    let posts = msg[0];
+    debug(posts);
+    return [new Model3(append(model.posts, posts)), none()];
+  }
 }
-function social_feed_post(avatar, name, handle, timestamp, comment_count, like_count, content) {
+function social_feed_post(avatar, name, handle, timestamp, comment_count, up_count, content) {
   return div(
     toList([
       class$(
@@ -5323,7 +5405,7 @@ function social_feed_post(avatar, name, handle, timestamp, comment_count, like_c
             ]),
             toList([
               div(
-                toList([class$("flex flex-wrap items-center gap-1")]),
+                toList([class$("flex flex-wrap gap-1")]),
                 toList([
                   view4(name),
                   view3(handle),
@@ -5351,11 +5433,85 @@ function social_feed_post(avatar, name, handle, timestamp, comment_count, like_c
                 toList([
                   span(
                     toList([]),
-                    toList([text2("\u{1F4AC} " + comment_count)])
+                    toList([
+                      svg2(
+                        toList([
+                          attribute(
+                            "xmlns:xlink",
+                            "http://www.w3.org/1999/xlink"
+                          ),
+                          attribute(
+                            "xmlns",
+                            "http://www.w3.org/2000/svg"
+                          ),
+                          attribute("xml:space", "preserve"),
+                          attribute("width", "20"),
+                          attribute("viewBox", "0 0 32 32"),
+                          attribute("version", "1.1"),
+                          attribute("height", "20"),
+                          attribute(
+                            "enable-background",
+                            "new 0 0 32 32"
+                          ),
+                          class$("inline mr-2 cursor-pointer")
+                        ]),
+                        toList([
+                          g(
+                            toList([id("bubble")]),
+                            toList([
+                              path(
+                                toList([
+                                  attribute("fill-rule", "evenodd"),
+                                  attribute("fill", "#f9fafb"),
+                                  attribute(
+                                    "d",
+                                    "M16,7c-5.963,0-11,3.206-11,7c0,0.276,0.224,0.5,0.5,0.5   S6,14.276,6,14c0-3.196,4.673-6,10-6c0.275,0,0.5-0.224,0.5-0.5S16.276,7,16,7z"
+                                  ),
+                                  attribute("clip-rule", "evenodd")
+                                ])
+                              ),
+                              path(
+                                toList([
+                                  attribute("fill-rule", "evenodd"),
+                                  attribute("fill", "#f9fafb"),
+                                  attribute(
+                                    "d",
+                                    "M16,2C7.163,2,0,7.373,0,14c0,4.127,2.779,7.766,7.008,9.926   C7.008,23.953,7,23.971,7,24c0,1.793-1.339,3.723-1.928,4.736c0.001,0,0.002,0,0.002,0C5.027,28.846,5,28.967,5,29.094   C5,29.594,5.405,30,5.906,30C6,30,6.165,29.975,6.161,29.986c3.125-0.512,6.069-3.383,6.753-4.215C13.913,25.918,14.943,26,16,26   c8.835,0,16-5.373,16-12C32,7.373,24.836,2,16,2z M16,24c-0.917,0-1.858-0.07-2.796-0.207c-0.097-0.016-0.194-0.021-0.29-0.021   c-0.594,0-1.163,0.264-1.546,0.73c-0.428,0.521-1.646,1.684-3.085,2.539c0.39-0.895,0.695-1.898,0.716-2.932   c0.006-0.064,0.009-0.129,0.009-0.184c0-0.752-0.421-1.439-1.09-1.781C4.212,20.252,2,17.207,2,14C2,8.486,8.28,4,16,4   c7.718,0,14,4.486,14,10C30,19.514,23.719,24,16,24z"
+                                  ),
+                                  attribute("clip-rule", "evenodd")
+                                ])
+                              )
+                            ])
+                          )
+                        ])
+                      ),
+                      text2(comment_count)
+                    ])
                   ),
                   span(
                     toList([]),
-                    toList([text2("\u2764\uFE0F " + like_count)])
+                    toList([
+                      svg(
+                        toList([
+                          attribute("viewBox", "0 0 448 512"),
+                          attribute("height", "20"),
+                          attribute("width", "20"),
+                          attribute("fill", "#2A935B"),
+                          class$("inline mr-2 cursor-pointer")
+                        ]),
+                        toList([
+                          path(
+                            toList([
+                              attribute(
+                                "d",
+                                "M376 192c-6.428 0-12.66 .8457-18.6 2.434C344.7 173.8 321.9 160 296 160c-6.428 0-12.66 .8457-18.6 2.434C264.7 141.8 241.9 128 216 128C213.3 128 210.6 128.1 208 128.4V72C208 32.3 175.7 0 136 0S64 32.3 64 72v196.3C44.51 284.5 32 308.8 32 336v49.88c0 32.1 17.1 61.65 44.63 77.12l55.83 31.35C153.1 505.9 176.4 512 199.8 512h107.9C385.1 512 448 447.4 448 368V264C448 224.3 415.7 192 376 192zM272 232c0-13.23 10.78-24 24-24S320 218.8 320 232v47.91C320 293.1 309.2 304 296 304S272 293.2 272 280V232zM192 200C192 186.8 202.8 176 216 176s24 10.77 24 24v48c0 3.029-.7012 5.875-1.73 8.545C227.9 251.3 216.4 248 204 248H192V200zM112 72c0-13.23 10.78-24 24-24S160 58.77 160 72v176H120c-2.686 0-5.217 .5566-7.84 .793C112.2 248.5 112 248.3 112 248V72zM307.7 464H199.8c-15.25 0-30.41-3.984-43.88-11.52l-55.78-31.34C87.72 414.2 80 400.6 80 385.9V336c0-22.06 17.94-40 40-40h84c15.44 0 28 12.56 28 28S219.4 352 204 352H152C138.8 352 128 362.8 128 376s10.75 24 24 24h52c33.23 0 61.25-21.58 71.54-51.36C282 350.7 288.9 352 296 352c5.041 0 9.836-1.166 14.66-2.178C322 374.6 346.1 392 376 392c7.684 0 14.94-1.557 21.87-3.836C388.9 431.4 351.9 464 307.7 464zM400 320c0 13.23-10.78 24-24 24S352 333.2 352 320V264c0-13.23 10.78-24 24-24s24 10.77 24 24V320z"
+                              )
+                            ])
+                          )
+                        ])
+                      ),
+                      text2(up_count)
+                    ])
                   )
                 ])
               )
@@ -5417,7 +5573,7 @@ function social_suggestions() {
     ])
   );
 }
-function get_feed() {
+function view_feed(posts) {
   return div(
     toList([
       class$(
@@ -5447,32 +5603,22 @@ function get_feed() {
               )
             ])
           ),
-          social_feed_post(
-            "https://res.cloudinary.com/subframe/image/upload/v1718919568/uploads/3102/mmfbvgi9hwpewyqglgul.png",
-            "Subframe",
-            "@subframeapp",
-            "2h ago",
-            "4",
-            "72",
-            "Watch how to get started with Subframe in just a few minutes"
-          ),
-          social_feed_post(
-            "https://res.cloudinary.com/subframe/image/upload/v1711417512/shared/m0kfajqpwkfief00it4v.jpg",
-            "Dr. Jane Foster",
-            "@drjanefoster",
-            "6h ago",
-            "9",
-            "34",
-            "New research alert! \u{1F9E0}  \u{1F4CA}\n\nOur team's study on neuroplasticity in adults over 60 has been published in @NatureNeurosci.\n\nKey findings:\n1. Cognitive training increased gray matter volume\n2. Improvements sustained at 6-month follow-up\n3. Never too late to teach an old brain new tricks!"
-          ),
-          social_feed_post(
-            "https://res.cloudinary.com/subframe/image/upload/v1711417513/shared/kwut7rhuyivweg8tmyzl.jpg",
-            "Jake Turner",
-            "@jaketurner4982",
-            "1d ago",
-            "2",
-            "4",
-            "Just finished a 5K run #running"
+          div(
+            toList([class$("w-full")]),
+            map(
+              posts,
+              (post) => {
+                return social_feed_post(
+                  "https://res.cloudinary.com/subframe/image/upload/v1718919568/uploads/3102/mmfbvgi9hwpewyqglgul.png",
+                  post.author.name,
+                  post.author.slug,
+                  "2h ago",
+                  "4",
+                  "72",
+                  post.content
+                );
+              }
+            )
           )
         ])
       ),
@@ -5488,7 +5634,119 @@ function get_feed() {
   );
 }
 function view5(model) {
-  return get_feed();
+  return view_feed(model.posts);
+}
+var query_feed = "query Feed {\n  feed(request: {}) {\n    total\n    edges {cursor, node {id, content, author {id, name, slug}}}\n  }\n}";
+function get_feed() {
+  let res = (() => {
+    let _pipe = new$5();
+    let _pipe$1 = set_query(_pipe, query_feed);
+    let _pipe$2 = set_operation_name(_pipe$1, "Feed");
+    let _pipe$3 = set_uri(_pipe$2, get_url() + "/graphql");
+    return set_header3(_pipe$3, "Content-Type", "application/json");
+  })();
+  let post_decoder = field(
+    "id",
+    string2,
+    (id2) => {
+      return field(
+        "content",
+        string2,
+        (content) => {
+          return field(
+            "author",
+            user_decoder(),
+            (author) => {
+              return success(new Post2(id2, content, author));
+            }
+          );
+        }
+      );
+    }
+  );
+  let node_decoder = field(
+    "node",
+    post_decoder,
+    (node) => {
+      return success(node);
+    }
+  );
+  let edges_decoder = field(
+    "edges",
+    list2(node_decoder),
+    (edges) => {
+      return success(edges);
+    }
+  );
+  let feed_decoder = field(
+    "feed",
+    edges_decoder,
+    (feed) => {
+      return success(feed);
+    }
+  );
+  let final_decoder = field(
+    "data",
+    feed_decoder,
+    (feed) => {
+      return success(feed);
+    }
+  );
+  return send3(
+    res,
+    expect_json(
+      (dyn) => {
+        return map_error(
+          run(dyn, final_decoder),
+          (err) => {
+            debug(err);
+            return toList([]);
+          }
+        );
+      },
+      (res2) => {
+        if (res2.isOk()) {
+          let v = res2[0];
+          return new Ok(v);
+        } else {
+          let e = res2[0];
+          debug(e);
+          return new Error(e);
+        }
+      }
+    )
+  );
+}
+function init4(_) {
+  let init_posts = toList([
+    new Post2(
+      "0",
+      "Content",
+      new User("0", "def", new None(), "def")
+    )
+  ]);
+  return [
+    new Model3(init_posts),
+    map4(
+      get_feed(),
+      (r) => {
+        if (r.isOk()) {
+          let p = r[0];
+          return new AppendPosts(p);
+        } else {
+          let e = r[0];
+          throw makeError(
+            "panic",
+            "ui/feed/feed",
+            99,
+            "",
+            "`panic` expression evaluated.",
+            {}
+          );
+        }
+      }
+    )
+  ];
 }
 
 // build/dev/javascript/maillage/model.mjs
@@ -5637,7 +5895,7 @@ function on_route_change(uri) {
     return new OnChangeView(new Main());
   }
 }
-function update2(model, msg) {
+function update3(model, msg) {
   if (msg instanceof OnChangeView) {
     let route = msg.view;
     return [
@@ -5659,6 +5917,18 @@ function update2(model, msg) {
       })(),
       auth_effect
     ];
+  } else if (msg instanceof FeedMessage) {
+    let feed_msg = msg[0];
+    let $ = update2(model.feed_model, feed_msg);
+    let feed_model = $[0];
+    let feed_effect = $[1];
+    return [
+      (() => {
+        let _record = model;
+        return new Model4(_record.view, _record.auth_model, feed_model);
+      })(),
+      feed_effect
+    ];
   } else {
     return [
       (() => {
@@ -5669,7 +5939,7 @@ function update2(model, msg) {
     ];
   }
 }
-function view_feed(model) {
+function view_feed2(model) {
   return view5(model.feed_model);
 }
 function view_auth(model) {
@@ -5770,7 +6040,7 @@ function sidebar() {
             "9 22V12H15V22"
           ),
           navigation_item(
-            "Inbox",
+            "Mails",
             toList([
               polyline(
                 toList([
@@ -5830,7 +6100,7 @@ function view7(model) {
       let _pipe = view_auth(model);
       return layout_empty(_pipe, model);
     } else {
-      let _pipe = view_feed(model);
+      let _pipe = view_feed2(model);
       return layout_sidebar(_pipe, model);
     }
   })();
@@ -5857,7 +6127,7 @@ function get_current_user() {
         "Bearer " + session_token
       );
     })();
-    let user_decoder = field(
+    let user_decoder2 = field(
       "name",
       string2,
       (name) => {
@@ -5865,14 +6135,22 @@ function get_current_user() {
           "slug",
           string2,
           (slug) => {
-            return success(new User(0, name, "", slug));
+            return field(
+              "id",
+              string2,
+              (id2) => {
+                return success(
+                  new User(id2, name, new None(), slug)
+                );
+              }
+            );
           }
         );
       }
     );
     let login_decoder = field(
       "me",
-      user_decoder,
+      user_decoder2,
       (user) => {
         return success(user);
       }
@@ -5957,13 +6235,22 @@ function init5(flags) {
   let auth_model = $[0];
   let $1 = init4(flags);
   let feed_model = $1[0];
+  let feed_effect = $1[1];
   return [
     new Model4(new Main(), auth_model, feed_model),
-    batch(toList([get_current_user(), init2(on_route_change)]))
+    batch(
+      toList([
+        get_current_user(),
+        map4(feed_effect, (e) => {
+          return new FeedMessage(e);
+        }),
+        init2(on_route_change)
+      ])
+    )
   ];
 }
 function main() {
-  let app = application(init5, update2, view7);
+  let app = application(init5, update3, view7);
   let $ = start2(app, "#app", void 0);
   if (!$.isOk()) {
     throw makeError(

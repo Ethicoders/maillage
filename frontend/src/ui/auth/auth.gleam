@@ -45,6 +45,14 @@ const query_register = "mutation Register($name: String!, $email: Email!, $passw
   }
 }"
 
+pub fn user_decoder() {
+  use name <- decode.field("name", decode.string)
+  // use email <- decode.field("email", decode.string)
+  use slug <- decode.field("slug", decode.string)
+  use id <- decode.field("id", decode.string)
+  decode.success(user.User(id:, name:, slug:, email: option.None))
+}
+
 fn login() {
   let res =
     gleamql.new()
@@ -55,16 +63,16 @@ fn login() {
     |> gleamql.set_uri(get_url() <> "/graphql")
     |> gleamql.set_header("Content-Type", "application/json")
 
-  let user_decoder = {
-    use name <- decode.field("name", decode.string)
-    // use email <- decode.field("email", decode.string)
-    use slug <- decode.field("slug", decode.string)
-    // use id <- decode.field("email", decode.int)
-    decode.success(user.User(id: 0, name:, slug:, email: ""))
-  }
+  // let user_decoder = {
+  //   use name <- decode.field("name", decode.string)
+  //   // use email <- decode.field("email", decode.string)
+  //   use slug <- decode.field("slug", decode.string)
+  //   // use id <- decode.field("email", decode.int)
+  //   decode.success(user.User(id: 0, name:, slug:, email: ""))
+  // }
 
   let auth_decoder = {
-    use user <- decode.field("user", user_decoder)
+    use user <- decode.field("user", user_decoder())
     use session_token <- decode.field("sessionToken", decode.string)
     decode.success(user.AuthenticatedUser(user:, session_token:))
   }
@@ -137,8 +145,8 @@ fn register() {
     use name <- decode.field("name", decode.string)
     use email <- decode.field("email", decode.string)
     use slug <- decode.field("email", decode.string)
-    use id <- decode.field("email", decode.int)
-    decode.success(user.User(id:, name:, slug:, email:))
+    use id <- decode.field("email", decode.string)
+    decode.success(user.User(id:, name:, slug:, email: option.Some(email)))
   }
 
   let auth_decoder = {

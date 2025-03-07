@@ -578,12 +578,20 @@ video {
   }
 }
 
+.mr-2 {
+  margin-right: 0.5rem;
+}
+
 .mt-2 {
   margin-top: 0.5rem;
 }
 
 .block {
   display: block;
+}
+
+.inline {
+  display: inline;
 }
 
 .flex {
@@ -664,6 +672,10 @@ video {
 
 .basis-0 {
   flex-basis: 0px;
+}
+
+.cursor-pointer {
+  cursor: pointer;
 }
 
 .flex-col {

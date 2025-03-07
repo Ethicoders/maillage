@@ -10,9 +10,9 @@ pub type UserId {
   UserId(value: Int)
 }
 
-pub fn id_to_int(id: UserId) -> Int {
-  id.value
-}
+// pub fn id_to_int(id: UserId) -> Int {
+//   id.value
+// }
 
 pub fn decode_user_id(d: Dynamic) {
   use value <- result.try(dynamic.int(d))
@@ -23,7 +23,7 @@ pub type User {
   User(
     id: UserId,
     name: String,
-    email: String,
+    email: Option(String),
     slug: String,
     password_digest: Option(String),
     // remember_digest: String,
@@ -33,26 +33,28 @@ pub type User {
 }
 
 pub fn decode_user_sql() -> Decoder(User) {
-  {
-    use id <- decode.field("id", decode.int)
-    use name <- decode.field("name", decode.string)
-    use email <- decode.field("email", decode.string)
-    use password_digest <- decode.optional_field(
-      "password_digest",
-      None,
-      decode.optional(decode.string),
-    )
-    // use created_at <- decode.field("created_at", decode.string)
-    use slug <- decode.field("slug", decode.string)
-    // use x5 <- decode.field("", decode.string)
+  use id <- decode.field("user_id", decode.int)
+  use name <- decode.field("name", decode.string)
+  use email <- decode.optional_field(
+    "email",
+    None,
+    decode.optional(decode.string),
+  )
+  use password_digest <- decode.optional_field(
+    "password_digest",
+    None,
+    decode.optional(decode.string),
+  )
+  // use created_at <- decode.field("created_at", decode.string)
+  use slug <- decode.field("slug", decode.string)
+  // use x5 <- decode.field("", decode.string)
 
-    // birl.from_naive
+  // birl.from_naive
 
-    // let user_email = email.parse_safe(email)
-    // use x6 <- decode.field(4, pog.timestamp_decoder())
-    // use x7 <- decode.field(4, pog.timestamp_decoder())
-    decode.success(User(UserId(id), name, email, slug, password_digest))
-  }
+  // let user_email = email.parse_safe(email)
+  // use x6 <- decode.field(4, pog.timestamp_decoder())
+  // use x7 <- decode.field(4, pog.timestamp_decoder())
+  decode.success(User(UserId(id), name, email, slug, password_digest))
 }
 
 pub fn create(
@@ -68,7 +70,7 @@ pub fn create(
         VALUES
         ($1, $2, $3, $4)
         RETURNING
-            id,
+            id AS user_id,
             name,
             slug,
             email,
@@ -96,7 +98,7 @@ pub fn get_by_id(
   let sql =
     "
     SELECT
-        id,
+        id AS user_id,
         name,
         slug,
         email
@@ -130,7 +132,7 @@ pub fn get_by_ids(
   let sql =
     "
     SELECT
-        id,
+        id AS user_id,
         email_address,
         password_digest,
         created_at::text
@@ -164,7 +166,7 @@ pub fn get_by_email(
   let sql =
     "
     SELECT
-        id,
+        id AS user_id,
         name,
         email,
         slug,
@@ -195,7 +197,7 @@ pub fn get_by_session_token(
   let sql =
     "
     SELECT
-        id,
+        id AS user_id,
         name,
         email,
         slug,
@@ -229,7 +231,7 @@ pub fn set_session_token(
     UPDATE public.user
     SET session_token = $1
     WHERE id = $2
-    RETURNING id,
+    RETURNING id AS user_id,
         name,
         email,
         slug;

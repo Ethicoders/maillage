@@ -1,4 +1,6 @@
+import api/user
+
 pub type Post {
 
-  Post(id: Int, content: String, author: Int)
+  Post(id: String, content: String, author: user.User)
 }

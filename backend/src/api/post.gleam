@@ -1,14 +1,17 @@
 import api/common
+import api/user
 import db/db
 import db/post
 import gleam/int
+import gleam/io
 import gleam/javascript/promise
 import gleam/list
 import graphql
+import pog
 
 pub type Post {
 
-  Post(id: Int, content: String, author: Int)
+  Post(id: String, content: String, author: user.User)
 }
 
 pub type CreatePostRequest {
@@ -30,7 +33,16 @@ pub fn create(
       use res <- promise.map(promres)
       case res {
         Ok(new_post) ->
-          Ok(Post(id: new_post.id.value, content:, author: found_user.id.value))
+          Ok(Post(
+            id: int.to_string(new_post.id.value),
+            content:,
+            author: user.User(
+              // found_user.email,
+              int.to_string(found_user.id.value),
+              found_user.name,
+              found_user.slug,
+            ),
+          ))
         Error(_e) -> Error("")
       }
     }
@@ -55,18 +67,38 @@ pub fn get_feed(
       use res <- promise.map(post.get_many(connection))
       case res {
         Ok(posts) ->
-          Ok(
-            graphql.create_edges(
-              list.map(posts, fn(post) {
-                Post(post.id.value, post.content, post.user_id)
-              }),
-              fn(node) { int.to_string(node.id) },
-            ),
-          )
-        Error(e) -> Error("")
+          Ok(graphql.create_edges(
+            list.map(posts, fn(post) {
+              Post(
+                int.to_string(post.id.value),
+                post.content,
+                user.User(
+                  // post.user.email,
+                  int.to_string(post.user.id.value),
+                  post.user.name,
+                  post.user.slug,
+                ),
+              )
+            }),
+            fn(node) { node.id },
+          ))
+        Error(pog_error) -> {
+          Error(case pog_error {
+            pog.ConnectionUnavailable -> "ConnectionUnavailable"
+            pog.ConstraintViolated(_, _, _) -> "ConstraintViolated"
+            pog.PostgresqlError(_, _, _) -> "PostgresqlError"
+            pog.QueryTimeout -> "QueryTimeout"
+            pog.UnexpectedArgumentCount(_, _) -> "UnexpectedArgumentCount"
+            pog.UnexpectedArgumentType(_, _) -> "UnexpectedArgumentType"
+            pog.UnexpectedResultType(e) -> {
+              io.debug(e)
+              "UnexpectedResultType"
+            }
+          })
+        }
       }
     }
-    Error(e) -> promise.resolve(Error(""))
+    Error(e) -> promise.resolve(Error(e))
   }
 
   out

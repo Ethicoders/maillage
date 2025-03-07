@@ -208,8 +208,7 @@ export const serve = (
         try {
           const result = await clone.json();
           if (isDev() && body?.operationName !== "IntrospectionQuery") {
-            console.log("Outgoing response", result);
-            console.log(response);
+            console.log("Outgoing response", result.data);
           }
 
           applyCORSHeaders(response.headers, "http://localhost:8080");
