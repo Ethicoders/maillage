@@ -56,50 +56,12 @@ pub type Scalars {
 
 @external(javascript, "./graphql.js", "serve")
 pub fn serve(
-  type_string: String,
   query_resolvers: Dict(String, Queries(f)),
   mutation_resolvers: Dict(String, Mutations(f)),
   other_resolvers: Dict(String, Scalars),
-  // other_resolvers: Dict(String, fn(v) -> o),
 ) -> a
 
 pub fn main() {
-  let type_string =
-    "
-  scalar Email
-  scalar Password
-
-  type User {id: ID!, name: String!, slug: String!}
-  type Post {id: ID!, content: String!, author: User!}
-  type AuthenticatedUser {user: User!, sessionToken: String!}
-
-
-  type EdgePost {
-    cursor: String!
-    node: Post!
-  }
-
-  type EdgesPost {
-    edges: [EdgePost!]!
-    total: Int
-  } 
-    
-  input RegisterRequest {name: String!, email: Email!, password: Password!}
-  input LoginRequest {email: Email!, password: Password!}
-  input CreatePostRequest {content: String!}
-  input FeedRequest {author: ID}
-
-  type Query {
-    me: User!
-    feed(request: FeedRequest!): EdgesPost
-  }
-
-  type Mutation {
-    register(request: RegisterRequest!): User!
-    login(request: LoginRequest!): AuthenticatedUser!
-    createPost(request: CreatePostRequest!): Post!
-  }"
-
   let query_resolvers =
     dict.new()
     |> dict.insert("me", Me(api_user.get_current_user))
@@ -113,7 +75,7 @@ pub fn main() {
     dict.new()
     |> dict.insert("Email", Email(api_email.validate))
     |> dict.insert("Password", Password(api_password.validate))
-  serve(type_string, query_resolvers, mutation_resolvers, other_resolvers)
+  serve(query_resolvers, mutation_resolvers, other_resolvers)
 }
 
 pub fn handle_req(req: Request) -> Promise(Response) {

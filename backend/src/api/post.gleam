@@ -6,6 +6,7 @@ import gleam/int
 import gleam/io
 import gleam/javascript/promise
 import gleam/list
+import gleam/option
 import graphql
 import pog
 
@@ -52,13 +53,13 @@ pub fn create(
 }
 
 pub type FeedRequest {
-  FeedRequest(content: String)
+  FeedRequest(author_id: option.Option(String))
 }
 
 pub fn get_feed(
   _,
   variables: graphql.Variables(FeedRequest),
-  ctx: graphql.Context,
+  _ctx: graphql.Context,
 ) -> promise.Promise(Result(graphql.WithEdges(Post), String)) {
   // let content = variables.request.content
 

@@ -4286,29 +4286,6 @@ function replace3(path2, query, fragment) {
   );
 }
 
-// build/dev/javascript/maillage/api/service.mjs
-function get_url() {
-  return "http://localhost:8000";
-}
-
-// build/dev/javascript/maillage/api/user.mjs
-var User = class extends CustomType {
-  constructor(id2, name, email, slug) {
-    super();
-    this.id = id2;
-    this.name = name;
-    this.email = email;
-    this.slug = slug;
-  }
-};
-var AuthenticatedUser = class extends CustomType {
-  constructor(user, session_token) {
-    super();
-    this.user = user;
-    this.session_token = session_token;
-  }
-};
-
 // build/dev/javascript/maillage/gleamql.mjs
 var Request2 = class extends CustomType {
   constructor(http_request, query, variables, decoder, operation_name) {
@@ -4467,6 +4444,33 @@ function set_header3(req, key2, value2) {
     _record.operation_name
   );
 }
+
+// build/dev/javascript/maillage/api/service.mjs
+function get_url() {
+  return "http://localhost:8000";
+}
+function get_client() {
+  let _pipe = new$5();
+  let _pipe$1 = set_uri(_pipe, get_url() + "/graphql");
+  return set_header3(_pipe$1, "Content-Type", "application/json");
+}
+
+// build/dev/javascript/maillage/api/user.mjs
+var User = class extends CustomType {
+  constructor(id2, name, slug) {
+    super();
+    this.id = id2;
+    this.name = name;
+    this.slug = slug;
+  }
+};
+var AuthenticatedUser = class extends CustomType {
+  constructor(user, session_token) {
+    super();
+    this.user = user;
+    this.session_token = session_token;
+  }
+};
 
 // build/dev/javascript/maillage/ui/auth/msg.mjs
 var ActionLogin = class extends CustomType {
@@ -4831,9 +4835,7 @@ function user_decoder() {
             "id",
             string2,
             (id2) => {
-              return success(
-                new User(id2, name, new None(), slug)
-              );
+              return success(new User(id2, name, slug));
             }
           );
         }
@@ -4847,7 +4849,7 @@ function get_storage() {
     throw makeError(
       "let_assert",
       "ui/auth/auth",
-      112,
+      110,
       "get_storage",
       "Pattern match failed, no pattern matched the value.",
       { value: $ }
@@ -5081,7 +5083,7 @@ function view2(model) {
 var query_login = "mutation Login($email: Email!, $password: Password!) {\n  login(request: {email: $email, password: $password}) {\n    user {\n      name\n      slug\n    }\n    sessionToken\n  }\n}";
 function login() {
   let res = (() => {
-    let _pipe = new$5();
+    let _pipe = get_client();
     let _pipe$1 = set_query(_pipe, query_login);
     let _pipe$2 = set_operation_name(_pipe$1, "Login");
     let _pipe$3 = set_variable(
@@ -5089,13 +5091,7 @@ function login() {
       "email",
       string3("test@test.fr")
     );
-    let _pipe$4 = set_variable(
-      _pipe$3,
-      "password",
-      string3("testpass")
-    );
-    let _pipe$5 = set_uri(_pipe$4, get_url() + "/graphql");
-    return set_header3(_pipe$5, "Content-Type", "application/json");
+    return set_variable(_pipe$3, "password", string3("testpass"));
   })();
   let auth_decoder = field(
     "user",
@@ -5154,7 +5150,7 @@ function login() {
 var query_register = "mutation Register($name: String!, $email: Email!, $password: Password!) {\n  register(request: {name: $name, email: $email, password: $password}) {\n    name\n    slug\n  }\n}";
 function register() {
   let res = (() => {
-    let _pipe = new$5();
+    let _pipe = get_client();
     let _pipe$1 = set_query(_pipe, query_register);
     let _pipe$2 = set_operation_name(_pipe$1, "Login");
     let _pipe$3 = set_variable(_pipe$2, "name", string3("test"));
@@ -5163,44 +5159,11 @@ function register() {
       "email",
       string3("test@test.fr")
     );
-    let _pipe$5 = set_variable(
-      _pipe$4,
-      "password",
-      string3("testpass")
-    );
-    let _pipe$6 = set_uri(_pipe$5, get_url() + "/graphql");
-    return set_header3(_pipe$6, "Content-Type", "application/json");
+    return set_variable(_pipe$4, "password", string3("testpass"));
   })();
-  let user_decoder$1 = field(
-    "name",
-    string2,
-    (name) => {
-      return field(
-        "email",
-        string2,
-        (email) => {
-          return field(
-            "email",
-            string2,
-            (slug) => {
-              return field(
-                "email",
-                string2,
-                (id2) => {
-                  return success(
-                    new User(id2, name, new Some(email), slug)
-                  );
-                }
-              );
-            }
-          );
-        }
-      );
-    }
-  );
   let auth_decoder = field(
     "user",
-    user_decoder$1,
+    user_decoder(),
     (user) => {
       return field(
         "sessionToken",
@@ -5284,7 +5247,7 @@ function update(model, msg) {
             throw makeError(
               "panic",
               "ui/auth/auth",
-              215,
+              203,
               "",
               "`panic` expression evaluated.",
               {}
@@ -5303,7 +5266,7 @@ function update(model, msg) {
           throw makeError(
             "panic",
             "ui/auth/auth",
-            225,
+            213,
             "",
             "Failed writing to storage!",
             {}
@@ -5315,7 +5278,7 @@ function update(model, msg) {
       throw makeError(
         "let_assert",
         "ui/auth/auth",
-        223,
+        211,
         "update",
         "Pattern match failed, no pattern matched the value.",
         { value: $ }
@@ -5639,11 +5602,9 @@ function view5(model) {
 var query_feed = "query Feed {\n  feed(request: {}) {\n    total\n    edges {cursor, node {id, content, author {id, name, slug}}}\n  }\n}";
 function get_feed() {
   let res = (() => {
-    let _pipe = new$5();
+    let _pipe = get_client();
     let _pipe$1 = set_query(_pipe, query_feed);
-    let _pipe$2 = set_operation_name(_pipe$1, "Feed");
-    let _pipe$3 = set_uri(_pipe$2, get_url() + "/graphql");
-    return set_header3(_pipe$3, "Content-Type", "application/json");
+    return set_operation_name(_pipe$1, "Feed");
   })();
   let post_decoder = field(
     "id",
@@ -5719,11 +5680,7 @@ function get_feed() {
 }
 function init4(_) {
   let init_posts = toList([
-    new Post2(
-      "0",
-      "Content",
-      new User("0", "def", new None(), "def")
-    )
+    new Post2("0", "Content", new User("0", "def", "def"))
   ]);
   return [
     new Model3(init_posts),
@@ -5738,7 +5695,7 @@ function init4(_) {
           throw makeError(
             "panic",
             "ui/feed/feed",
-            99,
+            94,
             "",
             "`panic` expression evaluated.",
             {}
@@ -5985,7 +5942,7 @@ function navigation_item(label, paths, path2) {
     ])
   );
 }
-function sidebar() {
+function sidebar(model) {
   return div(
     toList([
       class$(
@@ -6062,6 +6019,58 @@ function sidebar() {
             "22 12H16L14 15H10L8 12H2"
           )
         ])
+      ),
+      div(
+        toList([]),
+        toList([
+          (() => {
+            let $ = model.auth_model.current_user;
+            if ($ instanceof Some) {
+              return div(toList([]), toList([]));
+            } else {
+              return a(
+                toList([href("/auth")]),
+                toList([
+                  div(
+                    toList([
+                      class$(
+                        "rounded-full w-10 h-10 border-b border-neutral-border bg-default-font flex items-center justify-center"
+                      )
+                    ]),
+                    toList([
+                      svg(
+                        toList([
+                          attribute("viewBox", "0 0 32 32"),
+                          attribute("height", "32"),
+                          attribute("width", "32"),
+                          attribute("fill", "black")
+                        ]),
+                        toList([
+                          path(
+                            toList([
+                              attribute(
+                                "d",
+                                "M23.74,16.18a1,1,0,1,0-1.41,1.42A9,9,0,0,1,25,24c0,1.22-3.51,3-9,3s-9-1.78-9-3a9,9,0,0,1,2.63-6.37,1,1,0,0,0,0-1.41,1,1,0,0,0-1.41,0A10.92,10.92,0,0,0,5,24c0,3.25,5.67,5,11,5s11-1.75,11-5A10.94,10.94,0,0,0,23.74,16.18Z"
+                              )
+                            ])
+                          ),
+                          path(
+                            toList([
+                              attribute(
+                                "d",
+                                "M16,17a7,7,0,1,0-7-7A7,7,0,0,0,16,17ZM16,5a5,5,0,1,1-5,5A5,5,0,0,1,16,5Z"
+                              )
+                            ])
+                          )
+                        ])
+                      )
+                    ])
+                  )
+                ])
+              );
+            }
+          })()
+        ])
       )
     ])
   );
@@ -6072,7 +6081,7 @@ function layout_sidebar(child, model) {
       class$("w-full h-full min-h-screen text-default-font flex")
     ]),
     toList([
-      sidebar(),
+      sidebar(model),
       (() => {
         let $ = model.auth_model.current_user;
         if ($ instanceof Some) {
@@ -6112,45 +6121,18 @@ function get_current_user() {
   if ($.isOk()) {
     let session_token = $[0];
     let res = (() => {
-      let _pipe = new$5();
+      let _pipe = get_client();
       let _pipe$1 = set_query(_pipe, query_current_user);
       let _pipe$2 = set_operation_name(_pipe$1, "Me");
-      let _pipe$3 = set_uri(_pipe$2, get_url() + "/graphql");
-      let _pipe$4 = set_header3(
-        _pipe$3,
-        "Content-Type",
-        "application/json"
-      );
       return set_header3(
-        _pipe$4,
+        _pipe$2,
         "Authorization",
         "Bearer " + session_token
       );
     })();
-    let user_decoder2 = field(
-      "name",
-      string2,
-      (name) => {
-        return field(
-          "slug",
-          string2,
-          (slug) => {
-            return field(
-              "id",
-              string2,
-              (id2) => {
-                return success(
-                  new User(id2, name, new None(), slug)
-                );
-              }
-            );
-          }
-        );
-      }
-    );
     let login_decoder = field(
       "me",
-      user_decoder2,
+      user_decoder(),
       (user) => {
         return success(user);
       }
@@ -6183,7 +6165,7 @@ function get_current_user() {
                 throw makeError(
                   "panic",
                   "maillage",
-                  75,
+                  65,
                   "",
                   "Failed getting access to storage!",
                   {}
@@ -6195,7 +6177,7 @@ function get_current_user() {
             throw makeError(
               "let_assert",
               "maillage",
-              72,
+              62,
               "",
               "Pattern match failed, no pattern matched the value.",
               { value: $1 }
@@ -6215,7 +6197,7 @@ function get_current_user() {
             throw makeError(
               "panic",
               "maillage",
-              87,
+              77,
               "",
               "`panic` expression evaluated.",
               {}
@@ -6256,7 +6238,7 @@ function main() {
     throw makeError(
       "let_assert",
       "maillage",
-      102,
+      92,
       "main",
       "Pattern match failed, no pattern matched the value.",
       { value: $ }

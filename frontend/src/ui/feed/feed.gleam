@@ -1,10 +1,9 @@
 import api/post
-import api/service.{get_url}
+import api/service
 import api/user
 import gleam/dynamic/decode
 import gleam/io
 import gleam/list
-import gleam/option
 import gleam/result
 import gleamql
 import lustre/attribute
@@ -29,11 +28,9 @@ const query_feed = "query Feed {
 
 fn get_feed() {
   let res =
-    gleamql.new()
+    service.get_client()
     |> gleamql.set_query(query_feed)
     |> gleamql.set_operation_name("Feed")
-    |> gleamql.set_uri(get_url() <> "/graphql")
-    |> gleamql.set_header("Content-Type", "application/json")
 
   let post_decoder = {
     use id <- decode.field("id", decode.string)
@@ -88,9 +85,7 @@ pub type Model {
 }
 
 pub fn init(_flags) -> #(Model, Effect(Msg)) {
-  let init_posts = [
-    post.Post("0", "Content", user.User("0", "def", option.None, "def")),
-  ]
+  let init_posts = [post.Post("0", "Content", user.User("0", "def", "def"))]
   #(
     Model(posts: init_posts),
     effect.map(get_feed(), fn(r) {

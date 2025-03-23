@@ -35,23 +35,13 @@ fn get_current_user() {
   case auth.get_token() {
     Ok(session_token) -> {
       let res =
-        gleamql.new()
+        service.get_client()
         |> gleamql.set_query(query_current_user)
         |> gleamql.set_operation_name("Me")
-        |> gleamql.set_uri(service.get_url() <> "/graphql")
-        |> gleamql.set_header("Content-Type", "application/json")
         |> gleamql.set_header("Authorization", "Bearer " <> session_token)
 
-      let user_decoder = {
-        use name <- decode.field("name", decode.string)
-        // use email <- decode.field("email", decode.string)
-        use slug <- decode.field("slug", decode.string)
-        use id <- decode.field("id", decode.string)
-        decode.success(user.User(id:, name:, slug:, email: option.None))
-      }
-
       let login_decoder = {
-        use user <- decode.field("me", user_decoder)
+        use user <- decode.field("me", auth.user_decoder())
         decode.success(user)
       }
 
@@ -174,7 +164,7 @@ fn layout_sidebar(child: Element(Msg), model: Model) {
     [attribute.class("w-full h-full min-h-screen text-default-font flex")],
     [
       // view_nav(model),
-      sidebar(),
+      sidebar(model),
       case model.auth_model.current_user {
         option.Some(current_user) -> html.text("Auth")
         // html.text("Authenticated: " <> current_user.name)
@@ -188,7 +178,7 @@ fn layout_sidebar(child: Element(Msg), model: Model) {
   )
 }
 
-pub fn sidebar() {
+pub fn sidebar(model: Model) {
   html.div(
     [
       attribute.class(
@@ -255,6 +245,45 @@ pub fn sidebar() {
           ),
         ],
       ),
+      html.div([], [
+        case model.auth_model.current_user {
+          option.Some(_) -> html.div([], [])
+          option.None ->
+            html.a([attribute.href("/auth")], [
+              html.div(
+                [
+                  attribute.class(
+                    "rounded-full w-10 h-10 border-b border-neutral-border bg-default-font flex items-center justify-center",
+                  ),
+                ],
+                [
+                  html.svg(
+                    [
+                      attribute.attribute("viewBox", "0 0 32 32"),
+                      attribute.attribute("height", "32"),
+                      attribute.attribute("width", "32"),
+                      attribute.attribute("fill", "black"),
+                    ],
+                    [
+                      svg.path([
+                        attribute.attribute(
+                          "d",
+                          "M23.74,16.18a1,1,0,1,0-1.41,1.42A9,9,0,0,1,25,24c0,1.22-3.51,3-9,3s-9-1.78-9-3a9,9,0,0,1,2.63-6.37,1,1,0,0,0,0-1.41,1,1,0,0,0-1.41,0A10.92,10.92,0,0,0,5,24c0,3.25,5.67,5,11,5s11-1.75,11-5A10.94,10.94,0,0,0,23.74,16.18Z",
+                        ),
+                      ]),
+                      svg.path([
+                        attribute.attribute(
+                          "d",
+                          "M16,17a7,7,0,1,0-7-7A7,7,0,0,0,16,17ZM16,5a5,5,0,1,1-5,5A5,5,0,0,1,16,5Z",
+                        ),
+                      ]),
+                    ],
+                  ),
+                ],
+              ),
+            ])
+        },
+      ]),
       // user_avatar(
     //   "https://res.cloudinary.com/subframe/image/upload/v1711417507/shared/fychrij7dzl8wgq2zjq9.avif",
     // ),

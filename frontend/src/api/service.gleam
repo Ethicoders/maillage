@@ -1,3 +1,5 @@
+import gleamql
+
 pub fn get_url() {
   "http://localhost:8000"
 }
@@ -12,4 +14,10 @@ pub type PageInfo {
 
 pub type WithEdges(node) {
   WithEdges(total: Int, edges: List(Edge(node)), page_info: PageInfo)
+}
+
+pub fn get_client() {
+  gleamql.new()
+  |> gleamql.set_uri(get_url() <> "/graphql")
+  |> gleamql.set_header("Content-Type", "application/json")
 }

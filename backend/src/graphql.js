@@ -11,6 +11,13 @@ import {
   getCookies,
 } from "https://deno.land/std/http/cookie.ts";
 
+const runGleamGQLGen = async () => {
+  const cmd = new Deno.Command("./gleamgqlgen", { args: ["--input", "./src"] });
+  const { code, stdout, stderr } = await cmd.output();
+
+  return new TextDecoder().decode(stdout);
+};
+
 const dictToObject = (dict) => {
   const items = {};
 
@@ -74,9 +81,15 @@ export const getHandler = (
   mutationResolvers,
   otherResolvers
 ) => {
-  const typeDefs = gql`
-    ${typeString}
-  `;
+  let typeDefs;
+  try {
+    typeDefs = gql`
+      ${typeString}
+    `;
+  } catch (error) {
+    console.log("Def: ", typeString);
+    throw error;
+  }
 
   const processedOtherResolvers = Object.fromEntries(
     Object.entries(dictToObject(otherResolvers.root.array)).map(
@@ -161,14 +174,15 @@ export const generateSessionToken = (length = 32) => {
   return token;
 };
 
-export const serve = (
-  typeString,
+export const serve = async (
   queryResolvers,
   mutationResolvers,
   otherResolvers
 ) => {
+  const types = await runGleamGQLGen();
+
   const handler = getHandler(
-    typeString,
+    types,
     queryResolvers,
     mutationResolvers,
     otherResolvers
@@ -212,7 +226,7 @@ export const serve = (
           }
 
           applyCORSHeaders(response.headers, "http://localhost:8080");
-        } catch (error) {}
+        } catch (_error) {}
 
         return response;
       } else {
