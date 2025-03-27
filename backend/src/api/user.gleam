@@ -2,25 +2,21 @@ import api/common
 import core/user as core_user
 import db/db
 import db/user
-import gleam/dict.{type Dict}
-import gleam/http/request
 import gleam/int
 import gleam/io
 import gleam/javascript/promise
-import gleam/option
 import gleam/result
 import graphql
 import gwt
-import helpers
 import pog
 import types/email.{type Email}
 import types/password as types_password
 
 pub type User {
   User(
-    id: Int,
+    id: String,
     name: String,
-    email: String,
+    // email: String,
     slug: String,
     // created_at: birl.Time,
     // updated: birl.Time,
@@ -43,9 +39,9 @@ pub fn get_current_user(_, _, ctx: graphql.Context) {
   io.debug(ctx)
   use found_user <- promise.map_try(common.get_authenticated_user(ctx.request))
   Ok(User(
-    id: found_user.id.value,
+    id: int.to_string(found_user.id.value),
     name: found_user.name,
-    email: found_user.email,
+    // email: found_user.email,
     slug: found_user.slug,
   ))
 }
@@ -73,9 +69,9 @@ pub fn register(
       case p {
         Ok(item) -> {
           Ok(User(
-            id: item.id.value,
+            id: int.to_string(item.id.value),
             name: item.name,
-            email: item.email,
+            // email: item.email,
             slug: item.slug,
           ))
         }
@@ -124,7 +120,12 @@ pub fn login(
     |> gwt.to_string()
 
   AuthenticatedUser(
-    User(id: item.id.value, name: item.name, email: item.email, slug: item.slug),
+    User(
+      id: int.to_string(item.id.value),
+      name: item.name,
+      // email: item.email,
+      slug: item.slug,
+    ),
     jwt_string,
   )
 }

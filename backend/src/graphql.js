@@ -4,12 +4,19 @@ import { gql } from "https://deno.land/x/graphql_tag@0.0.1/mod.ts";
 import * as glen from "../glen/glen.mjs";
 import * as app from "./maillage.mjs";
 import { GraphQLScalarType } from "https://deno.land/x/graphql_deno@v15.0.0/mod.ts";
-import { Error as ResultError, Ok } from "../prelude.mjs";
+import { Error as ResultError, Ok, List } from "../prelude.mjs";
 import {
   deleteCookie,
   setCookie,
   getCookies,
 } from "https://deno.land/std/http/cookie.ts";
+
+const runGleamGQLGen = async () => {
+  const cmd = new Deno.Command("./gleamgqlgen", { args: ["--input", "./src"] });
+  const { code, stdout, stderr } = await cmd.output();
+
+  return new TextDecoder().decode(stdout);
+};
 
 const dictToObject = (dict) => {
   const items = {};
@@ -28,14 +35,28 @@ const handleResolverResponse = (resolver) => async (one, two, ctx) => {
   if (result instanceof ResultError) {
     return new Error(result[0]);
   } else if (result instanceof Ok) {
-    return snakeToCamelCase(result[0]);
+    return snakeToCamelCase(objectListsToArray(result[0]));
   }
-  return snakeToCamelCase(result);
+  return snakeToCamelCase(objectListsToArray(result));
 };
 
+const objectListsToArray = (obj) => {
+  if (typeof obj !== "object" || obj === null) {
+    return obj;
+  }
+
+  for (const key in obj) {
+    if (obj[key] instanceof List) {
+      obj[key] = obj[key].toArray();
+    } else {
+      obj[key] = objectListsToArray(obj[key]);
+    }
+  }
+  return obj;
+};
 
 const snakeToCamelCase = (obj) => {
-  if (typeof obj !== 'object' || obj === null) {
+  if (typeof obj !== "object" || obj === null) {
     return obj;
   }
 
@@ -47,22 +68,28 @@ const snakeToCamelCase = (obj) => {
   for (const key in obj) {
     if (Object.prototype.hasOwnProperty.call(obj, key)) {
       const camelKey = key.replace(/([-_][a-z])/gi, ($1) => {
-        return $1.toUpperCase().replace('-', '').replace('_', '');
+        return $1.toUpperCase().replace("-", "").replace("_", "");
       });
       newObj[camelKey] = snakeToCamelCase(obj[key]);
     }
   }
   return newObj;
-}
+};
 export const getHandler = (
   typeString,
   queryResolvers,
   mutationResolvers,
   otherResolvers
 ) => {
-  const typeDefs = gql`
-    ${typeString}
-  `;
+  let typeDefs;
+  try {
+    typeDefs = gql`
+      ${typeString}
+    `;
+  } catch (error) {
+    console.log("Def: ", typeString);
+    throw error;
+  }
 
   const processedOtherResolvers = Object.fromEntries(
     Object.entries(dictToObject(otherResolvers.root.array)).map(
@@ -116,7 +143,7 @@ export const getHandler = (
   return (request) =>
     GraphQLHTTP({
       schema,
-      headers: {"test": "test"},
+      headers: { test: "test" },
       graphiql: true,
     })(request);
 };
@@ -147,14 +174,15 @@ export const generateSessionToken = (length = 32) => {
   return token;
 };
 
-export const serve = (
-  typeString,
+export const serve = async (
   queryResolvers,
   mutationResolvers,
   otherResolvers
 ) => {
+  const types = await runGleamGQLGen();
+
   const handler = getHandler(
-    typeString,
+    types,
     queryResolvers,
     mutationResolvers,
     otherResolvers
@@ -194,14 +222,11 @@ export const serve = (
         try {
           const result = await clone.json();
           if (isDev() && body?.operationName !== "IntrospectionQuery") {
-            console.log("Outgoing response", result);
-            console.log(response);
-            
+            console.log("Outgoing response", result.data);
           }
 
           applyCORSHeaders(response.headers, "http://localhost:8080");
-
-        } catch (error) {}
+        } catch (_error) {}
 
         return response;
       } else {

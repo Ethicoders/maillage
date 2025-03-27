@@ -8,6 +8,8 @@ WORKDIR /app
 
 COPY . .
 
+RUN ./download-gleam.sh 1.9.1
+
 RUN mv ./gleam /usr/local/bin
 
 CMD ["gleam", "run"]

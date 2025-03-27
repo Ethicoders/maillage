@@ -1,4 +1,4 @@
-import api/service.{get_url}
+import api/service
 import api/user
 import gleam/dynamic/decode
 import gleam/io
@@ -45,26 +45,32 @@ const query_register = "mutation Register($name: String!, $email: Email!, $passw
   }
 }"
 
+pub fn user_decoder() {
+  use name <- decode.field("name", decode.string)
+  // use email <- decode.field("email", decode.string)
+  use slug <- decode.field("slug", decode.string)
+  use id <- decode.field("id", decode.string)
+  decode.success(user.User(id:, name:, slug:))
+}
+
 fn login() {
   let res =
-    gleamql.new()
+    service.get_client()
     |> gleamql.set_query(query_login)
     |> gleamql.set_operation_name("Login")
     |> gleamql.set_variable("email", json.string("test@test.fr"))
     |> gleamql.set_variable("password", json.string("testpass"))
-    |> gleamql.set_uri(get_url() <> "/graphql")
-    |> gleamql.set_header("Content-Type", "application/json")
 
-  let user_decoder = {
-    use name <- decode.field("name", decode.string)
-    // use email <- decode.field("email", decode.string)
-    use slug <- decode.field("slug", decode.string)
-    // use id <- decode.field("email", decode.int)
-    decode.success(user.User(id: 0, name:, slug:, email: ""))
-  }
+  // let user_decoder = {
+  //   use name <- decode.field("name", decode.string)
+  //   // use email <- decode.field("email", decode.string)
+  //   use slug <- decode.field("slug", decode.string)
+  //   // use id <- decode.field("email", decode.int)
+  //   decode.success(user.User(id: 0, name:, slug:, email: ""))
+  // }
 
   let auth_decoder = {
-    use user <- decode.field("user", user_decoder)
+    use user <- decode.field("user", user_decoder())
     use session_token <- decode.field("sessionToken", decode.string)
     decode.success(user.AuthenticatedUser(user:, session_token:))
   }
@@ -124,25 +130,15 @@ pub fn get_token() {
 
 fn register() {
   let res =
-    gleamql.new()
+    service.get_client()
     |> gleamql.set_query(query_register)
     |> gleamql.set_operation_name("Login")
     |> gleamql.set_variable("name", json.string("test"))
     |> gleamql.set_variable("email", json.string("test@test.fr"))
     |> gleamql.set_variable("password", json.string("testpass"))
-    |> gleamql.set_uri(get_url() <> "/graphql")
-    |> gleamql.set_header("Content-Type", "application/json")
-
-  let user_decoder = {
-    use name <- decode.field("name", decode.string)
-    use email <- decode.field("email", decode.string)
-    use slug <- decode.field("email", decode.string)
-    use id <- decode.field("email", decode.int)
-    decode.success(user.User(id:, name:, slug:, email:))
-  }
 
   let auth_decoder = {
-    use user <- decode.field("user", user_decoder)
+    use user <- decode.field("user", user_decoder())
     use session_token <- decode.field("sessionToken", decode.string)
     decode.success(user.AuthenticatedUser(user:, session_token:))
   }
@@ -239,7 +235,7 @@ pub fn sign_up_card_with_value_props(model: Model) {
         ],
         [
           html.img([
-            attribute.src("/static/m.svg"),
+            attribute.src("/static/images/m.svg"),
             attribute.class("h-16 flex-none object-cover"),
           ]),
           //   logo.view([attribute.class("h-8 flex-none object-cover")], None, None),
@@ -302,6 +298,7 @@ pub fn sign_up_card_with_value_props(model: Model) {
                   ActionLogin -> "Sign In"
                   ActionRegister -> "Sign Up"
                 },
+                "w-full",
                 shared.AuthMessage(Authenticate),
               ),
               html.div([attribute.class("flex flex-wrap items-start gap-1")], [

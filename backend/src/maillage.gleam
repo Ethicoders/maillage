@@ -27,6 +27,10 @@ pub type Queries(a) {
     value: fn(a, graphql.Variables(Nil), graphql.Context) ->
       promise.Promise(Result(api_user.User, String)),
   )
+  Feed(
+    value: fn(a, graphql.Variables(api_post.FeedRequest), graphql.Context) ->
+      promise.Promise(Result(graphql.WithEdges(api_post.Post), String)),
+  )
 }
 
 pub type Mutations(a) {
@@ -52,40 +56,16 @@ pub type Scalars {
 
 @external(javascript, "./graphql.js", "serve")
 pub fn serve(
-  type_string: String,
   query_resolvers: Dict(String, Queries(f)),
   mutation_resolvers: Dict(String, Mutations(f)),
   other_resolvers: Dict(String, Scalars),
-  // other_resolvers: Dict(String, fn(v) -> o),
 ) -> a
 
 pub fn main() {
-  let type_string =
-    "
-  scalar Email
-
-  scalar Password
-
-  type User {name: String!, slug: String!}
-  type Post {content: String!, author: Int!}
-  type AuthenticatedUser {user: User!, sessionToken: String!}
-    
-  input RegisterRequest {name: String!, email: Email!, password: Password!}
-  input LoginRequest {email: Email!, password: Password!}
-  input CreatePostRequest {content: String!}
-
-  type Query {
-    me: User
-  }
-
-  type Mutation {
-    register(request: RegisterRequest!): User
-    login(request: LoginRequest!): AuthenticatedUser
-    createPost(request: CreatePostRequest!): Post
-  }"
-
   let query_resolvers =
-    dict.new() |> dict.insert("me", Me(api_user.get_current_user))
+    dict.new()
+    |> dict.insert("me", Me(api_user.get_current_user))
+    |> dict.insert("feed", Feed(api_post.get_feed))
   let mutation_resolvers =
     dict.new()
     |> dict.insert("register", Register(api_user.register))
@@ -95,7 +75,7 @@ pub fn main() {
     dict.new()
     |> dict.insert("Email", Email(api_email.validate))
     |> dict.insert("Password", Password(api_password.validate))
-  serve(type_string, query_resolvers, mutation_resolvers, other_resolvers)
+  serve(query_resolvers, mutation_resolvers, other_resolvers)
 }
 
 pub fn handle_req(req: Request) -> Promise(Response) {
